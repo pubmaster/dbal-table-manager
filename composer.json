@@ -1,0 +1,29 @@
+{
+  "name": "pubmaster/dbal-table-manager",
+  "description": "Base class for accessing the database with DBAL connection.",
+  "license": ["MIT"],
+  "authors": [
+    {
+      "name": "Vladimir Potapenko",
+      "email": "potapenko-va@yandex.ru"
+    }
+  ],
+  "require": {
+    "php": "~7.1",
+    "doctrine/dbal": "^2.5"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.1.3",
+    "phpunit/dbunit": "^4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "DBALTableManager\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  }
+}
