@@ -119,7 +119,7 @@ abstract class BaseManager
 
             else if ($condition instanceof ValueArrayCondition) {
                 if ($condition->getValues() !== []) {
-                    $type = Connection::PARAM_STR_ARRAY; // я бы указывал тип в ValueArrayCondition.
+                    $type = Connection::PARAM_STR_ARRAY; // Брать тип из getFieldMap
                     if (is_int($condition->getValues()[0])) {
                         $type = Connection::PARAM_INT_ARRAY;
                     }
@@ -150,6 +150,8 @@ abstract class BaseManager
 
             // в этот блок можно еще добавить RawSqlCondition, где на чистом Sql писать сложные условия.
             // Тогда все станет гораздо гибче в принципе для расширения менеджера
+
+            // подумать про like
         }
 
         if (!$hasDeletedAtFilter) { // а если ентити без поля deleted_at?

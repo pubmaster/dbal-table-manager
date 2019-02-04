@@ -391,6 +391,7 @@ SQL
     public function testSuccessFindAllWithSortingDesc(): void
     {
         // arrange
+        $thirOrderArrayOfData = self::DB_FOR_TESTS;
         $sorting = new Sorting();
         $sorting->addSorting('age', 'desc');
 

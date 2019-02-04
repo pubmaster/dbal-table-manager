@@ -29,6 +29,8 @@ interface EntityInterface
      */
     public function getCastMap(): array;
 
+    // Объединить в getFieldMap 2 метода выше.
+
     /**
      * @return bool
      */
