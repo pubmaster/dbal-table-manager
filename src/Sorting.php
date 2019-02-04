@@ -7,6 +7,7 @@ namespace DBALTableManager;
  *
  * @package DBALTableManager
  */
+// Все эксепшены в уникальный класс
 class Sorting
 {
     /** @var array */
@@ -24,7 +25,7 @@ class Sorting
         if ($order === '') {
             throw new \InvalidArgumentException('Order must not be an empty string');
         }
-        if (!in_array(strtolower($order), ['asc', 'desc'])) {
+        if (!in_array(strtolower($order), ['asc', 'desc'])) { // OrderList и его значения в публичные константы
             throw new \InvalidArgumentException('Illegal order value');
         }
 

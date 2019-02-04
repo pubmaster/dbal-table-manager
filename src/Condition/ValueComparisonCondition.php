@@ -7,6 +7,9 @@ namespace DBALTableManager\Condition;
  *
  * @package DBALTableManager\Condition
  */
+// Статичные методы на конструкторы сравнения.
+// Или отдельные классы на каждый вид сравнения.
+// Иначе есть возможность передать галиматью в оператор.
 class ValueComparisonCondition
 {
     /**

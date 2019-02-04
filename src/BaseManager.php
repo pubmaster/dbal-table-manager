@@ -17,6 +17,13 @@ use Doctrine\DBAL\Query\QueryBuilder;
  *
  * @package DBALTableManager
  */
+//1) Все эксепшены в уникальные.
+//2) Придумать что-нибудь с генерацией имен prepared_statements.
+// Они плохо читаются и есть возможность накосячить с дублированием кода.
+// Константы, методы генерации или доп. классы.
+//3) Валидировать переданные поля фильтрации в каждом запросе на наличие их в EntityInterface.
+// Так мы сможем создавать гибкие менеджеры, ответственные только за определенную часть полей у Entity.
+// Например, менеджер отвечающий только за смену статусовых полей.
 abstract class BaseManager
 {
     /**
@@ -93,6 +100,7 @@ abstract class BaseManager
      */
     protected function applyFilters(QueryBuilder $query, Filter $filter): void
     {
+        // валидация всех полей на наличие в модели.
         $hasDeletedAtFilter = false;
 
         foreach ($filter->getConditionList() as $condition) {
@@ -111,7 +119,7 @@ abstract class BaseManager
 
             else if ($condition instanceof ValueArrayCondition) {
                 if ($condition->getValues() !== []) {
-                    $type = Connection::PARAM_STR_ARRAY;
+                    $type = Connection::PARAM_STR_ARRAY; // я бы указывал тип в ValueArrayCondition.
                     if (is_int($condition->getValues()[0])) {
                         $type = Connection::PARAM_INT_ARRAY;
                     }
@@ -139,9 +147,12 @@ abstract class BaseManager
 
                 $hasDeletedAtFilter = true;
             }
+
+            // в этот блок можно еще добавить RawSqlCondition, где на чистом Sql писать сложные условия.
+            // Тогда все станет гораздо гибче в принципе для расширения менеджера
         }
 
-        if (!$hasDeletedAtFilter) {
+        if (!$hasDeletedAtFilter) { // а если ентити без поля deleted_at?
             $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NULL');
         }
     }
@@ -153,6 +164,7 @@ abstract class BaseManager
     protected function applyOrderBy(QueryBuilder $query, Sorting $sorting): void
     {
         foreach ($sorting->getSortList() as $sort) {
+            // валидация поля и направления. Я бы обернул $sort в объект с двумя гетерами
             $query->addOrderBy($sort[0], $sort[1]);
         }
     }
@@ -174,7 +186,7 @@ abstract class BaseManager
 
         $query->setMaxResults(1);
 
-        $result = $query->execute()->fetchAll();
+        $result = $query->execute()->fetchAll(); // точно нет обычного fetch?
         if (!isset($result[0])) {
             return null;
         }
@@ -209,8 +221,9 @@ abstract class BaseManager
      */
     protected function applyPkFilterToQuery(QueryBuilder $query, $pk): void
     {
+        // валидация поля
         if (!is_array($pk)) {
-            $firstPkColumn = $this->getEntity()->getPrimaryKey()[0];
+            $firstPkColumn = $this->getEntity()->getPrimaryKey()[0]; // может быть нотис, который порушит функционал
             $query->andWhere($firstPkColumn . ' = :filter_' . $firstPkColumn)
                 ->setParameter(':filter_' . $firstPkColumn, $pk);
         } else {

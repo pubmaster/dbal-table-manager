@@ -37,12 +37,12 @@ interface EntityInterface
     /**
      * @return string
      */
-    public function getCreatedAtField(): string;
+    public function getCreatedAtField(): string; // nullable
 
     /**
      * @return string
      */
-    public function getUpdatedAtField(): string;
+    public function getUpdatedAtField(): string; // nullable
 
     /**
      * @return bool
@@ -52,5 +52,5 @@ interface EntityInterface
     /**
      * @return string
      */
-    public function getDeletedAtField(): string;
+    public function getDeletedAtField(): string; // nullable
 }

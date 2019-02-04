@@ -18,6 +18,7 @@ class DeletedRowCondition
      */
     private $showDeleted;
 
+    // нет php-doc
     public function __construct(bool $showNotDeleted, bool $showDeleted)
     {
         $this->showNotDeleted = $showNotDeleted;
