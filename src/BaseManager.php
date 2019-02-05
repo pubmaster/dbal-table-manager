@@ -37,7 +37,7 @@ abstract class BaseManager
     /**
      * @var StringUtils
      */
-    private $stringUtils;
+    protected $stringUtils;
 
     /**
      * BaseManager constructor.
