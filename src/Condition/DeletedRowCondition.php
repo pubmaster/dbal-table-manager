@@ -18,6 +18,12 @@ class DeletedRowCondition
      */
     private $showDeleted;
 
+    /**
+     * DeletedRowCondition constructor.
+     *
+     * @param bool $showNotDeleted
+     * @param bool $showDeleted
+     */
     public function __construct(bool $showNotDeleted, bool $showDeleted)
     {
         $this->showNotDeleted = $showNotDeleted;

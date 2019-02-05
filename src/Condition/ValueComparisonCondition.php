@@ -7,7 +7,7 @@ namespace DBALTableManager\Condition;
  *
  * @package DBALTableManager\Condition
  */
-class ValueComparisonCondition
+class ValueComparisonCondition implements ColumnableCondition
 {
     /**
      * @var string
@@ -58,5 +58,71 @@ class ValueComparisonCondition
     public function getValue()
     {
         return $this->value;
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function equals(string $column, $value): self
+    {
+        return new static($column, '=', $value);
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function notEquals(string $column, $value): self
+    {
+        return new static($column, '<>', $value);
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function lessThan(string $column, $value): self
+    {
+        return new static($column, '<', $value);
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function lessOrEquals(string $column, $value): self
+    {
+        return new static($column, '<=', $value);
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function greaterThan(string $column, $value): self
+    {
+        return new static($column, '>', $value);
+    }
+
+    /**
+     * @param string $column
+     * @param $value
+     *
+     * @return ValueComparisonCondition
+     */
+    public static function greaterOrEquals(string $column, $value): self
+    {
+        return new static($column, '>=', $value);
     }
 }

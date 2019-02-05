@@ -22,12 +22,7 @@ interface EntityInterface
     /**
      * @return array
      */
-    public function getFieldList(): array;
-
-    /**
-     * @return array
-     */
-    public function getCastMap(): array;
+    public function getFieldMap(): array;
 
     /**
      * @return bool
@@ -35,14 +30,14 @@ interface EntityInterface
     public function isTimestampable(): bool;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getCreatedAtField(): string;
+    public function getCreatedAtField(): ?string;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getUpdatedAtField(): string;
+    public function getUpdatedAtField(): ?string;
 
     /**
      * @return bool
@@ -50,7 +45,7 @@ interface EntityInterface
     public function isSoftDeletable(): bool;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getDeletedAtField(): string;
+    public function getDeletedAtField(): ?string;
 }

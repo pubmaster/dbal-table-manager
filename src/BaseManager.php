@@ -2,12 +2,19 @@
 
 namespace DBALTableManager;
 
+use DBALTableManager\Condition\ColumnableCondition;
 use DBALTableManager\Condition\DeletedRowCondition;
 use DBALTableManager\Condition\NullableValueCondition;
+use DBALTableManager\Condition\RawSqlCondition;
 use DBALTableManager\Condition\ValueArrayCondition;
 use DBALTableManager\Condition\ValueComparisonCondition;
+use DBALTableManager\Condition\ValueLikeCondition;
 use DBALTableManager\Entity\EntityInterface;
+use DBALTableManager\Exception\QueryExecutionException;
+use DBALTableManager\Exception\EntityDefinitionException;
+use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Query\BulkInsertQuery;
+use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
@@ -27,20 +34,27 @@ abstract class BaseManager
      * @var TypeConverter
      */
     protected $typeConverter;
+    /**
+     * @var StringUtils
+     */
+    private $stringUtils;
 
     /**
      * BaseManager constructor.
      *
      * @param BaseConnectionInterface $connection
      * @param TypeConverter $typeConverter
+     * @param StringUtils $stringUtils
      */
     public function __construct(
         BaseConnectionInterface $connection,
-        TypeConverter $typeConverter
+        TypeConverter $typeConverter,
+        StringUtils $stringUtils
     )
     {
         $this->connection = $connection;
         $this->typeConverter = $typeConverter;
+        $this->stringUtils = $stringUtils;
     }
 
     /**
@@ -84,7 +98,7 @@ abstract class BaseManager
      */
     protected function prepareRow(array $row): array
     {
-        return $this->typeConverter->convert($row, $this->getEntity()->getCastMap());
+        return $this->typeConverter->convert($row, $this->getEntity()->getFieldMap());
     }
 
     /**
@@ -93,12 +107,25 @@ abstract class BaseManager
      */
     protected function applyFilters(QueryBuilder $query, Filter $filter): void
     {
+        $columnList = [];
+        foreach ($filter->getConditionList() as $condition) {
+            if ($condition instanceof ColumnableCondition) {
+                $columnList[] = $condition->getColumn();
+            }
+        }
+        $this->checkColumnList($columnList);
+
         $hasDeletedAtFilter = false;
 
         foreach ($filter->getConditionList() as $condition) {
             if ($condition instanceof ValueComparisonCondition) {
-                $query->andWhere($condition->getColumn() . ' ' . $condition->getOperator() . ' :filter_' . $condition->getColumn())
-                    ->setParameter(':filter_' . $condition->getColumn(), $condition->getValue());
+                $query->andWhere(
+                    $condition->getColumn()
+                    . ' '
+                    . $condition->getOperator()
+                    . ' '
+                    . $query->createNamedParameter($condition->getValue())
+                );
             }
 
             else if ($condition instanceof NullableValueCondition) {
@@ -111,22 +138,36 @@ abstract class BaseManager
 
             else if ($condition instanceof ValueArrayCondition) {
                 if ($condition->getValues() !== []) {
-                    $type = Connection::PARAM_STR_ARRAY;
-                    if (is_int($condition->getValues()[0])) {
+                    $columnType = $this->getEntity()->getFieldMap()[$condition->getColumn()] ?? null;
+                    if (in_array($columnType, ['int', 'integer'])) {
                         $type = Connection::PARAM_INT_ARRAY;
-                    }
-
-                    if ($condition->isIncluded()) {
-                        $query->andWhere($condition->getColumn() . ' IN (:filter_' . $condition->getColumn() . ')');
                     } else {
-                        $query->andWhere($condition->getColumn() . ' NOT IN (:filter_' . $condition->getColumn() . ')');
+                        $type = Connection::PARAM_STR_ARRAY;
                     }
 
-                    $query->setParameter(':filter_' . $condition->getColumn(), $condition->getValues(), $type);
+                    $param = $query->createNamedParameter($condition->getValues(), $type);
+                    if ($condition->isIncluded()) {
+                        $query->andWhere($condition->getColumn() . ' IN (' . $param . ')');
+                    } else {
+                        $query->andWhere($condition->getColumn() . ' NOT IN (' . $param . ')');
+                    }
                 }
             }
 
+            else if ($condition instanceof ValueLikeCondition) {
+                $value = ($condition->isStrictFromBeginning() ? '' : '%')
+                    . $this->stringUtils->prepareSqlLikeOperator($condition->getValue())
+                    . ($condition->isStrictToEnd() ? '' : '%');
+                $query->andWhere($condition->getColumn() . ' LIKE ' . $query->createNamedParameter($value));
+            }
+
+            else if ($condition instanceof RawSqlCondition) {
+                $query->andWhere($condition->getExpression());
+            }
+
             else if ($condition instanceof DeletedRowCondition) {
+                $this->checkSoftDeletableEntity();
+
                 $showNotDeleted = $condition->isShowNotDeleted();
                 $showDeleted = $condition->isShowDeleted();
                 if ($showNotDeleted && $showDeleted) {
@@ -141,8 +182,19 @@ abstract class BaseManager
             }
         }
 
-        if (!$hasDeletedAtFilter) {
+        if (!$hasDeletedAtFilter && $this->getEntity()->isSoftDeletable()) {
             $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NULL');
+        }
+    }
+
+    /**
+     * @param string[] $columnList
+     */
+    protected function checkColumnList(array $columnList): void
+    {
+        $unknownColumns = array_diff($columnList, array_keys($this->getEntity()->getFieldMap()));
+        if ($unknownColumns !== []) {
+            throw InvalidRequestException::withUnknownColumnList($unknownColumns);
         }
     }
 
@@ -152,8 +204,14 @@ abstract class BaseManager
      */
     protected function applyOrderBy(QueryBuilder $query, Sorting $sorting): void
     {
+        $columnList = [];
         foreach ($sorting->getSortList() as $sort) {
-            $query->addOrderBy($sort[0], $sort[1]);
+            $columnList[] = $sort->getColumn();
+        }
+        $this->checkColumnList($columnList);
+
+        foreach ($sorting->getSortList() as $sort) {
+            $query->addOrderBy($sort->getColumn(), $sort->getOrder());
         }
     }
 
@@ -174,12 +232,12 @@ abstract class BaseManager
 
         $query->setMaxResults(1);
 
-        $result = $query->execute()->fetchAll();
-        if (!isset($result[0])) {
+        $result = $query->execute()->fetch();
+        if ($result === null || $result === false) {
             return null;
         }
 
-        return $this->prepareRow($result[0]);
+        return $this->prepareRow($result);
     }
 
     /**
@@ -195,12 +253,12 @@ abstract class BaseManager
 
         $this->applyPkFilterToQuery($query, $pk);
 
-        $result = $query->execute()->fetchAll();
-        if (!isset($result[0])) {
+        $result = $query->execute()->fetch();
+        if ($result === null || $result === false) {
             return null;
         }
 
-        return $this->prepareRow($result[0]);
+        return $this->prepareRow($result);
     }
 
     /**
@@ -209,17 +267,21 @@ abstract class BaseManager
      */
     protected function applyPkFilterToQuery(QueryBuilder $query, $pk): void
     {
+        if ($this->getEntity()->getPrimaryKey() === []) {
+            throw EntityDefinitionException::withNoPrimaryKeyDefined();
+        }
+
         if (!is_array($pk)) {
             $firstPkColumn = $this->getEntity()->getPrimaryKey()[0];
-            $query->andWhere($firstPkColumn . ' = :filter_' . $firstPkColumn)
-                ->setParameter(':filter_' . $firstPkColumn, $pk);
+            $query->andWhere($firstPkColumn . ' = ' . $query->createNamedParameter($pk));
         } else {
+            $this->checkColumnList(array_keys($pk));
+
             foreach ($this->getEntity()->getPrimaryKey() as $pkColumn) {
                 if (!isset($pk[$pkColumn])) {
-                    throw new \RuntimeException('No value provided for PK column "' . $pkColumn . '"');
+                    throw InvalidRequestException::withNoPrimaryKeyValue($pkColumn);
                 }
-                $query->andWhere($pkColumn . ' = :filter_' . $pkColumn)
-                    ->set(':filter_' . $pkColumn, $pk[$pkColumn]);
+                $query->andWhere($pkColumn . ' = ' . $query->createNamedParameter($pk[$pkColumn]));
             }
         }
     }
@@ -235,6 +297,8 @@ abstract class BaseManager
         $query->insert($this->getEntity()->getTableName());
 
         if ($this->getEntity()->isTimestampable()) {
+            $this->checkTimestampableEntity();
+
             $currentTime = date('Y-m-d H:i:s');
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
@@ -242,10 +306,11 @@ abstract class BaseManager
             $data[$updatedAtField] = $currentTime;
         }
 
+        $this->checkColumnList(array_keys($data));
+
         $values = [];
         foreach ($data as $key => $value) {
-            $values[$key] = ':insert_' . $key;
-            $query->setParameter(':insert_' . $key, $value);
+            $values[$key] = $query->createNamedParameter($value);
         }
         $query->values($values);
 
@@ -262,12 +327,16 @@ abstract class BaseManager
     public function batchInsert(array $data): int
     {
         if ($this->getEntity()->isTimestampable()) {
+            $this->checkTimestampableEntity();
+
             $currentTime = date('Y-m-d H:i:s');
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
             foreach ($data as &$row) {
                 $row[$createdAtField] = $currentTime;
                 $row[$updatedAtField] = $currentTime;
+
+                $this->checkColumnList(array_keys($row));
             }
             unset($row);
         }
@@ -326,6 +395,8 @@ abstract class BaseManager
     protected function setValuesForUpdateQuery(QueryBuilder $query, array $data): void
     {
         if ($this->getEntity()->isTimestampable()) {
+            $this->checkTimestampableEntity();
+
             $currentTime = date('Y-m-d H:i:s');
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
@@ -333,10 +404,11 @@ abstract class BaseManager
             $data[$updatedAtField] = $currentTime;
         }
 
+        $this->checkColumnList(array_keys($data));
+
         $values = [];
         foreach ($data as $key => $value) {
-            $query->set($key, ':update_' . $key);
-            $query->setParameter(':update_' . $key, $value);
+            $query->set($key, $query->createNamedParameter($value));
         }
         $query->values($values);
     }
@@ -350,7 +422,7 @@ abstract class BaseManager
     public function batchUpdate(array $data, array $filterList): int
     {
         if (count($data) !== count($filterList)) {
-            throw new \InvalidArgumentException('Data count must be equal to filter count');
+            throw InvalidRequestException::withDataAndFilterCountNotEqual();
         }
 
         $count = 0;
@@ -411,7 +483,7 @@ abstract class BaseManager
     public function softDelete(Filter $filter): int
     {
         if ($this->getEntity()->isSoftDeletable() === false) {
-            throw new \RuntimeException('Can\'t soft delete from non-softdeletable table');
+            throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
@@ -432,7 +504,7 @@ abstract class BaseManager
     public function softDeleteByPk($pk): int
     {
         if ($this->getEntity()->isSoftDeletable() === false) {
-            throw new \RuntimeException('Can\'t soft delete from non-softdeletable table');
+            throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
@@ -451,7 +523,7 @@ abstract class BaseManager
     public function softDeleteAll(): int
     {
         if ($this->getEntity()->isSoftDeletable() === false) {
-            throw new \RuntimeException('Can\'t soft delete from non-softdeletable table');
+            throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
@@ -469,14 +541,12 @@ abstract class BaseManager
     {
         $currentTime = date('Y-m-d H:i:s');
 
-        $deletedAtColumn = $this->getEntity()->getDeletedAtField();
-        $query->set($deletedAtColumn, ':ts_' . $deletedAtColumn);
-        $query->setParameter(':ts_' . $deletedAtColumn, $currentTime);
+        $this->checkSoftDeletableEntity();
+        $query->set($this->getEntity()->getDeletedAtField(), $query->createNamedParameter($currentTime));
 
         if ($this->getEntity()->isTimestampable()) {
-            $updatedAtColumn = $this->getEntity()->getUpdatedAtField();
-            $query->set($updatedAtColumn, ':ts_' . $updatedAtColumn);
-            $query->setParameter(':ts_' . $updatedAtColumn, $currentTime);
+            $this->checkTimestampableEntity();
+            $query->set($this->getEntity()->getUpdatedAtField(), $query->createNamedParameter($currentTime));
         }
     }
 
@@ -494,8 +564,8 @@ abstract class BaseManager
         $this->applyFilters($query, $filter);
 
         $result = $query->execute()->fetch();
-        if ($result === null) {
-            throw new \RuntimeException('Aggregation query returned no rows');
+        if ($result === null || $result === false) {
+            throw QueryExecutionException::withAggregatedResultOfZeroRows();
         }
 
         return $result['count'];
@@ -512,4 +582,33 @@ abstract class BaseManager
      * @return EntityInterface
      */
     abstract public function getEntity(): EntityInterface;
+
+    private function checkTimestampableEntity(): void
+    {
+        if ($this->getEntity()->isTimestampable()) {
+            return;
+        }
+
+        $createdAtField = $this->getEntity()->getCreatedAtField();
+        if ($createdAtField === null || $createdAtField === '') {
+            throw EntityDefinitionException::withNoCreatedAtColumnDefined();
+        }
+
+        $updatedAtField = $this->getEntity()->getUpdatedAtField();
+        if ($updatedAtField === null || $updatedAtField === '') {
+            throw EntityDefinitionException::withNoUpdatedAtColumnDefined();
+        }
+    }
+
+    private function checkSoftDeletableEntity(): void
+    {
+        if ($this->getEntity()->isSoftDeletable()) {
+            return;
+        }
+
+        $deletedAtField = $this->getEntity()->getDeletedAtField();
+        if ($deletedAtField === null || $deletedAtField === '') {
+            throw EntityDefinitionException::withNoDeletedAtColumnDefined();
+        }
+    }
 }

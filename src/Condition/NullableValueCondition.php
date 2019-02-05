@@ -7,7 +7,7 @@ namespace DBALTableManager\Condition;
  *
  * @package DBALTableManager\Condition
  */
-class NullableValueCondition
+class NullableValueCondition implements ColumnableCondition
 {
     /**
      * @var string

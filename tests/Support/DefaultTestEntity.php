@@ -16,6 +16,17 @@ class DefaultTestEntity implements EntityInterface
     public const CREATED_AT_COLUMN = 'created_at';
     public const UPDATED_AT_COLUMN = 'updated_at';
     public const DELETED_AT_COLUMN = 'deleted_at';
+    public const FIELD_MAP = [
+        'id' => 'int',
+        'name' => 'string',
+        'birthday' => 'date',
+        'age' => 'int',
+        'weight' => 'float',
+        'married' => 'bool',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
 
     /**
      * @return string
@@ -36,32 +47,9 @@ class DefaultTestEntity implements EntityInterface
     /**
      * @return array
      */
-    public function getFieldList(): array
+    public function getFieldMap(): array
     {
-        return [
-            'id',
-            'name',
-            'birthday',
-            'age',
-            'weight',
-            'married',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ];
-    }
-
-    /**
-     * @return array
-     */
-    public function getCastMap(): array
-    {
-        return [
-            'id' => 'int',
-            'age' => 'int',
-            'weight' => 'float',
-            'married' => 'bool',
-        ];
+        return self::FIELD_MAP;
     }
 
     /**
@@ -77,7 +65,7 @@ class DefaultTestEntity implements EntityInterface
      */
     public function getCreatedAtField(): string
     {
-        return 'created_at';
+        return self::CREATED_AT_COLUMN;
     }
 
     /**
@@ -85,7 +73,7 @@ class DefaultTestEntity implements EntityInterface
      */
     public function getUpdatedAtField(): string
     {
-        return 'updated_at';
+        return self::UPDATED_AT_COLUMN;
     }
 
     /**
@@ -101,6 +89,6 @@ class DefaultTestEntity implements EntityInterface
      */
     public function getDeletedAtField(): string
     {
-        return 'deleted_at';
+        return self::DELETED_AT_COLUMN;
     }
 }

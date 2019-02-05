@@ -7,7 +7,7 @@ namespace DBALTableManager\Condition;
  *
  * @package DBALTableManager\Condition
  */
-class ValueArrayCondition
+class ValueArrayCondition implements ColumnableCondition
 {
     /**
      * @var string

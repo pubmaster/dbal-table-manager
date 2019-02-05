@@ -9,30 +9,33 @@ namespace DBALTableManager;
  */
 class Sorting
 {
-    /** @var array */
+    public const SORT_ASC = 'ASC';
+    public const SORT_DESC = 'DESC';
+
+    /** @var SortingItem[] */
     private $sortList = [];
 
     /**
-     * @param string $fieldName
+     * @param string $column
      * @param string $order
      */
-    public function addSorting(string $fieldName, string $order = 'ASC'): void
+    public function addSorting(string $column, string $order = self::SORT_ASC): void
     {
-        if ($fieldName === '') {
-            throw new \InvalidArgumentException('Field name must not be an empty string');
+        if ($column === '') {
+            throw new \InvalidArgumentException('Column must not be an empty string');
         }
         if ($order === '') {
             throw new \InvalidArgumentException('Order must not be an empty string');
         }
-        if (!in_array(strtolower($order), ['asc', 'desc'])) {
+        if (!in_array(mb_strtoupper($order), [self::SORT_ASC, self::SORT_DESC], true)) {
             throw new \InvalidArgumentException('Illegal order value');
         }
 
-        $this->sortList[] = [$fieldName, $order];
+        $this->sortList[] = new SortingItem($column, $order);
     }
 
     /**
-     * @return array
+     * @return SortingItem[]
      */
     public function getSortList(): array
     {

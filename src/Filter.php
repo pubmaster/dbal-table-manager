@@ -4,8 +4,10 @@ namespace DBALTableManager;
 
 use DBALTableManager\Condition\DeletedRowCondition;
 use DBALTableManager\Condition\NullableValueCondition;
+use DBALTableManager\Condition\RawSqlCondition;
 use DBALTableManager\Condition\ValueArrayCondition;
 use DBALTableManager\Condition\ValueComparisonCondition;
+use DBALTableManager\Condition\ValueLikeCondition;
 
 /**
  * Class Filter
@@ -35,82 +37,82 @@ class Filter
      */
     public function equals(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '=', $value);
+        $this->conditionList[] = ValueComparisonCondition::equals($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      * @param $value
      *
      * @return Filter
      */
-    public function notEquals($column, $value): self
+    public function notEquals(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '<>', $value);
+        $this->conditionList[] = ValueComparisonCondition::notEquals($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      * @param $value
      *
      * @return Filter
      */
-    public function lessThan($column, $value): self
+    public function lessThan(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '<', $value);
+        $this->conditionList[] = ValueComparisonCondition::lessThan($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      * @param $value
      *
      * @return Filter
      */
-    public function lessOrEquals($column, $value): self
+    public function lessOrEquals(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '<=', $value);
+        $this->conditionList[] = ValueComparisonCondition::lessOrEquals($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      * @param $value
      *
      * @return Filter
      */
-    public function greaterThan($column, $value): self
+    public function greaterThan(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '>', $value);
+        $this->conditionList[] = ValueComparisonCondition::greaterThan($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      * @param $value
      *
      * @return Filter
      */
-    public function greaterOrEquals($column, $value): self
+    public function greaterOrEquals(string $column, $value): self
     {
-        $this->conditionList[] = new ValueComparisonCondition($column, '>=', $value);
+        $this->conditionList[] = ValueComparisonCondition::greaterOrEquals($column, $value);
 
         return $this;
     }
 
     /**
-     * @param $column
+     * @param string $column
      *
      * @return Filter
      */
-    public function isNull($column): self
+    public function isNull(string $column): self
     {
         $this->conditionList[] = new NullableValueCondition($column, true);
 
@@ -118,11 +120,11 @@ class Filter
     }
 
     /**
-     * @param $column
+     * @param string $column
      *
      * @return Filter
      */
-    public function isNotNull($column): self
+    public function isNotNull(string $column): self
     {
         $this->conditionList[] = new NullableValueCondition($column, false);
 
@@ -130,12 +132,12 @@ class Filter
     }
 
     /**
-     * @param $column
-     * @param $valueList
+     * @param string $column
+     * @param array $valueList
      *
      * @return Filter
      */
-    public function in($column, $valueList): self
+    public function in(string $column, array $valueList): self
     {
         $this->conditionList[] = new ValueArrayCondition($column, $valueList, true);
 
@@ -143,14 +145,41 @@ class Filter
     }
 
     /**
-     * @param $column
-     * @param $valueList
+     * @param string $column
+     * @param array $valueList
      *
      * @return Filter
      */
-    public function notIn($column, $valueList): self
+    public function notIn(string $column, array $valueList): self
     {
         $this->conditionList[] = new ValueArrayCondition($column, $valueList, false);
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     * @param string $value
+     * @param bool $strictFromBeginning
+     * @param bool $strictToEnd
+     *
+     * @return Filter
+     */
+    public function like(string $column, string $value, bool $strictFromBeginning = false, bool $strictToEnd = false): self
+    {
+        $this->conditionList[] = new ValueLikeCondition($column, $value, $strictFromBeginning, $strictToEnd);
+
+        return $this;
+    }
+
+    /**
+     * @param string $expression
+     *
+     * @return Filter
+     */
+    public function rawSql(string $expression): self
+    {
+        $this->conditionList[] = new RawSqlCondition($expression);
 
         return $this;
     }
