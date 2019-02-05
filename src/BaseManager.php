@@ -58,13 +58,17 @@ abstract class BaseManager
     }
 
     /**
-     * @param Filter $filter
-     * @param Pagination $pagination
-     * @param Sorting $sorting
+     * @param Filter|null $filter
+     * @param Pagination|null $pagination
+     * @param Sorting|null $sorting
      *
      * @return array
      */
-    public function findAll(Filter $filter, Pagination $pagination, Sorting $sorting): array
+    public function findAll(
+        ?Filter $filter = null,
+        ?Pagination $pagination = null,
+        ?Sorting $sorting = null
+    ): array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
@@ -73,11 +77,13 @@ abstract class BaseManager
         $this->applyFilters($query, $filter);
         $this->applyOrderBy($query, $sorting);
 
-        if ($pagination->getOffset() !== null) {
-            $query->setFirstResult($pagination->getOffset());
-        }
-        if ($pagination->getLimit() !== null) {
-            $query->setMaxResults($pagination->getLimit());
+        if ($pagination !== null) {
+            if ($pagination->getOffset() !== null) {
+                $query->setFirstResult($pagination->getOffset());
+            }
+            if ($pagination->getLimit() !== null) {
+                $query->setMaxResults($pagination->getLimit());
+            }
         }
 
         $list = $query->execute()->fetchAll();
@@ -103,12 +109,17 @@ abstract class BaseManager
 
     /**
      * @param QueryBuilder $query
-     * @param Filter $filter
+     * @param Filter|null $filter
      */
-    protected function applyFilters(QueryBuilder $query, Filter $filter): void
+    protected function applyFilters(QueryBuilder $query, ?Filter $filter): void
     {
+        $conditionList = [];
+        if ($filter !== null) {
+            $conditionList = $filter->getConditionList();
+        }
+
         $columnList = [];
-        foreach ($filter->getConditionList() as $condition) {
+        foreach ($conditionList as $condition) {
             if ($condition instanceof ColumnableCondition) {
                 $columnList[] = $condition->getColumn();
             }
@@ -117,7 +128,7 @@ abstract class BaseManager
 
         $hasDeletedAtFilter = false;
 
-        foreach ($filter->getConditionList() as $condition) {
+        foreach ($conditionList as $condition) {
             if ($condition instanceof ValueComparisonCondition) {
                 $query->andWhere(
                     $condition->getColumn()
@@ -200,28 +211,33 @@ abstract class BaseManager
 
     /**
      * @param QueryBuilder $query
-     * @param Sorting $sorting
+     * @param Sorting|null $sorting
      */
-    protected function applyOrderBy(QueryBuilder $query, Sorting $sorting): void
+    protected function applyOrderBy(QueryBuilder $query, ?Sorting $sorting): void
     {
+        $sortList = [];
+        if ($sorting !== null) {
+            $sortList = $sorting->getSortList();
+        }
+
         $columnList = [];
-        foreach ($sorting->getSortList() as $sort) {
+        foreach ($sortList as $sort) {
             $columnList[] = $sort->getColumn();
         }
         $this->checkColumnList($columnList);
 
-        foreach ($sorting->getSortList() as $sort) {
+        foreach ($sortList as $sort) {
             $query->addOrderBy($sort->getColumn(), $sort->getOrder());
         }
     }
 
     /**
      * @param Filter $filter
-     * @param Sorting $sorting
+     * @param Sorting|null $sorting
      *
      * @return array
      */
-    public function findOne(Filter $filter, Sorting $sorting): ?array
+    public function findOneByFilter(Filter $filter, ?Sorting $sorting = null): ?array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
@@ -245,7 +261,7 @@ abstract class BaseManager
      *
      * @return array
      */
-    public function findByPk($pk): ?array
+    public function findOneByPk($pk): ?array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
@@ -355,12 +371,12 @@ abstract class BaseManager
     }
 
     /**
-     * @param array $data
      * @param Filter $filter
+     * @param array $data
      *
      * @return int
      */
-    public function update(array $data, Filter $filter): int
+    public function updateByFilter(Filter $filter, array $data): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->update($this->getEntity()->getTableName());
@@ -428,18 +444,18 @@ abstract class BaseManager
         $count = 0;
 
         foreach ($data as $i => $row) {
-            $count += $this->update($row, $filterList[$i]);
+            $count += $this->updateByFilter($filterList[$i], $row);
         }
 
         return $count;
     }
 
     /**
-     * @param $filter
+     * @param Filter $filter
      *
-     * @return \Doctrine\DBAL\Driver\Statement|int
+     * @return int
      */
-    public function delete($filter)
+    public function deleteByFilter(Filter $filter): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->delete($this->getEntity()->getTableName());
@@ -480,7 +496,7 @@ abstract class BaseManager
      *
      * @return int
      */
-    public function softDelete(Filter $filter): int
+    public function softDeleteByFilter(Filter $filter): int
     {
         if ($this->getEntity()->isSoftDeletable() === false) {
             throw EntityDefinitionException::withNotSoftDeletable();
@@ -551,11 +567,11 @@ abstract class BaseManager
     }
 
     /**
-     * @param Filter $filter
+     * @param Filter|null $filter
      *
      * @return int
      */
-    public function getCount(Filter $filter): int
+    public function getCount(?Filter $filter = null): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('count(*) as count');

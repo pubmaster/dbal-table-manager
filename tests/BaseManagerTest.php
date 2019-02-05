@@ -184,7 +184,7 @@ SQL
         ];
 
         // action
-        $resultUsers = $this->manager->findAll(new Filter(), new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll();
 
         // assert
         self::assertCount(count($notDeletedUsers), $resultUsers);
@@ -201,7 +201,7 @@ SQL
         $filter->equals('name', 'Someone');
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -223,7 +223,7 @@ SQL
         $filter->notEquals('name', $excludedUser['name']);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -243,7 +243,7 @@ SQL
         $filter->lessThan('age', 22);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -264,7 +264,7 @@ SQL
         $filter->lessOrEquals('age', 22);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -284,7 +284,7 @@ SQL
         $filter->greaterThan('age', 22);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -305,7 +305,7 @@ SQL
         $filter->greaterOrEquals('age', 22);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -325,7 +325,7 @@ SQL
         $filter->isNull('birthday');
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -346,7 +346,7 @@ SQL
         $filter->isNotNull('birthday');
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -367,7 +367,7 @@ SQL
         $filter->in('name', ['John', 'Mister X']);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -387,7 +387,7 @@ SQL
         $filter->notIn('name', ['John', 'Mister X']);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -408,7 +408,7 @@ SQL
         $filter->in('age', [22, 13]);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -428,7 +428,7 @@ SQL
         $filter->notIn('age', [22, 13]);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -448,7 +448,7 @@ SQL
         $filter->like('name', 'ster');
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -468,7 +468,7 @@ SQL
         $filter->like('name', 'Mist', true);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -488,7 +488,7 @@ SQL
         $filter->like('name', 'er X', false, true);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -508,7 +508,7 @@ SQL
         $filter->like('name', 'Mister X', true, true);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -529,7 +529,7 @@ SQL
         $filter->rawSql('age > 40 OR age < 20');
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -552,7 +552,7 @@ SQL
         $filter->deleted([true, false]);
 
         // action
-        $resultUsers = $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $resultUsers = $this->manager->findAll($filter);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -571,7 +571,7 @@ SQL
         $pagination = new Pagination(1, 2);
 
         // action
-        $resultUsers = $this->manager->findAll(new Filter(), $pagination, new Sorting());
+        $resultUsers = $this->manager->findAll(null, $pagination);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -593,7 +593,7 @@ SQL
         $sorting->addSorting('age', 'asc');
 
         // action
-        $resultUsers = $this->manager->findAll(new Filter(), new Pagination(), $sorting);
+        $resultUsers = $this->manager->findAll(null, null, $sorting);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -615,7 +615,7 @@ SQL
         $sorting->addSorting('age', 'desc');
 
         // action
-        $resultUsers = $this->manager->findAll(new Filter(), new Pagination(), $sorting);
+        $resultUsers = $this->manager->findAll(null, null, $sorting);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -638,7 +638,7 @@ SQL
         $sorting->addSorting('age', 'desc');
 
         // action
-        $resultUsers = $this->manager->findAll(new Filter(), new Pagination(), $sorting);
+        $resultUsers = $this->manager->findAll(null, null, $sorting);
 
         // assert
         self::assertCount(count($targetUsers), $resultUsers);
@@ -658,23 +658,23 @@ SQL
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessage('Unknown columns: [UNKNOWN_FIELD]');
 
-        $this->manager->findAll($filter, new Pagination(), new Sorting());
+        $this->manager->findAll($filter);
     }
 
-    public function testSuccessFindOneWithoutAnything(): void
+    public function testSuccessFindOneByFilterWithEmptyFilter(): void
     {
         // arrange
         $targetUser = self::USER_1;
 
         // action
-        $resultUser = $this->manager->findOne(new Filter(), new Sorting());
+        $resultUser = $this->manager->findOneByFilter(new Filter());
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterEquals(): void
+    public function testSuccessFindOneByFilterWithFilterEquals(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -683,14 +683,14 @@ SQL
         $filter->equals('name', 'Someone');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterNotEquals(): void
+    public function testSuccessFindOneByFilterWithFilterNotEquals(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -699,14 +699,14 @@ SQL
         $filter->notEquals('name', 'Someone');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLessThan(): void
+    public function testSuccessFindOneByFilterWithFilterLessThan(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -715,14 +715,14 @@ SQL
         $filter->lessThan('age', 22);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLessOrEquals(): void
+    public function testSuccessFindOneByFilterWithFilterLessOrEquals(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -731,14 +731,14 @@ SQL
         $filter->lessOrEquals('age', 22);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterGreaterThan(): void
+    public function testSuccessFindOneByFilterWithFilterGreaterThan(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -747,14 +747,14 @@ SQL
         $filter->greaterThan('age', 22);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterGreaterOrEquals(): void
+    public function testSuccessFindOneByFilterWithFilterGreaterOrEquals(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -763,14 +763,14 @@ SQL
         $filter->greaterOrEquals('age', 22);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterIsNull(): void
+    public function testSuccessFindOneByFilterWithFilterIsNull(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -779,14 +779,14 @@ SQL
         $filter->isNull('birthday');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterIsNotNull(): void
+    public function testSuccessFindOneByFilterWithFilterIsNotNull(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -795,14 +795,14 @@ SQL
         $filter->isNotNull('birthday');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterInString(): void
+    public function testSuccessFindOneByFilterWithFilterInString(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -811,14 +811,14 @@ SQL
         $filter->in('name', ['John', 'Mister X']);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterNotInString(): void
+    public function testSuccessFindOneByFilterWithFilterNotInString(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -827,14 +827,14 @@ SQL
         $filter->notIn('name', ['John', 'Mister X']);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterInInt(): void
+    public function testSuccessFindOneByFilterWithFilterInInt(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -843,14 +843,14 @@ SQL
         $filter->in('age', [22, 13]);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterNotInInt(): void
+    public function testSuccessFindOneByFilterWithFilterNotInInt(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -859,14 +859,14 @@ SQL
         $filter->notIn('age', [22, 13]);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLikeNoBounds(): void
+    public function testSuccessFindOneByFilterWithFilterLikeNoBounds(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -875,14 +875,14 @@ SQL
         $filter->like('name', 'ster');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLikeFromBeginning(): void
+    public function testSuccessFindOneByFilterWithFilterLikeFromBeginning(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -891,14 +891,14 @@ SQL
         $filter->like('name', 'Mist', true);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLikeToEnd(): void
+    public function testSuccessFindOneByFilterWithFilterLikeToEnd(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -907,14 +907,14 @@ SQL
         $filter->like('name', 'er X', false, true);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterLikeAllBounds(): void
+    public function testSuccessFindOneByFilterWithFilterLikeAllBounds(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -923,14 +923,14 @@ SQL
         $filter->like('name', 'Mister X', true, true);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterRawSql(): void
+    public function testSuccessFindOneByFilterWithFilterRawSql(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -939,14 +939,14 @@ SQL
         $filter->rawSql('age > 40 OR age < 20');
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithFilterDeleted(): void
+    public function testSuccessFindOneByFilterWithFilterDeleted(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -955,14 +955,14 @@ SQL
         $filter->deleted([true, false]);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithSortingAsc(): void
+    public function testSuccessFindOneByFilterWithSortingAsc(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -971,14 +971,14 @@ SQL
         $sorting->addSorting('age', 'asc');
 
         // action
-        $resultUser = $this->manager->findOne(new Filter(), $sorting);
+        $resultUser = $this->manager->findOneByFilter(new Filter(), $sorting);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithSortingDesc(): void
+    public function testSuccessFindOneByFilterWithSortingDesc(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -987,14 +987,14 @@ SQL
         $sorting->addSorting('age', 'desc');
 
         // action
-        $resultUser = $this->manager->findOne(new Filter(), $sorting);
+        $resultUser = $this->manager->findOneByFilter(new Filter(), $sorting);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneWithDoubleSorting(): void
+    public function testSuccessFindOneByFilterWithDoubleSorting(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -1004,56 +1004,56 @@ SQL
         $sorting->addSorting('age', 'desc');
 
         // action
-        $resultUser = $this->manager->findOne(new Filter(), $sorting);
+        $resultUser = $this->manager->findOneByFilter(new Filter(), $sorting);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessNotFound(): void
+    public function testSuccessFindOneByFilterNotFound(): void
     {
         // arrange
         $filter = new Filter();
         $filter->equals(DefaultTestEntity::PK_COLUMN, 100000);
 
         // action
-        $resultUser = $this->manager->findOne($filter, new Sorting());
+        $resultUser = $this->manager->findOneByFilter($filter);
 
         // assert
         self::assertNull($resultUser);
     }
 
-    public function testSuccessFindByPk(): void
+    public function testSuccessFindOneByPk(): void
     {
         // arrange
         $targetUser = self::USER_1;
 
         // action
-        $resultUser = $this->manager->findByPk($targetUser['id']);
+        $resultUser = $this->manager->findOneByPk($targetUser['id']);
 
         // assert
         self::assertNotNull($resultUser);
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessNotFindByPk(): void
+    public function testSuccessNotFindOneByPk(): void
     {
         // action
-        $data = $this->manager->findByPk(10000);
+        $data = $this->manager->findOneByPk(10000);
 
         // assert
         self::assertNull($data);
     }
 
-    public function testFailFindByPkNoPrimaryKeyValue(): void
+    public function testFailFindOneByPkNoPrimaryKeyValue(): void
     {
         // assert
         // action
         $this->expectException(InvalidRequestException::class);
         $this->expectExceptionMessage('No value provided for PK column "id"');
 
-        $this->manager->findByPk([
+        $this->manager->findOneByPk([
             'name' => 1,
         ]);
     }
@@ -1138,7 +1138,7 @@ SQL
         $this->manager->batchInsert([]);
     }
 
-    public function testSuccessUpdate(): void
+    public function testSuccessUpdateByFilter(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -1155,7 +1155,7 @@ SQL
         $filter->equals('name', $targetUser['name']);
 
         // action
-        $count = $this->manager->update($dataForUpdate, $filter);
+        $count = $this->manager->updateByFilter($filter, $dataForUpdate);
 
         // assert
         self::assertEquals(1, $count);
@@ -1172,7 +1172,7 @@ SQL
         self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
     }
 
-    public function testSuccessUpdateNotExistingRow(): void
+    public function testSuccessUpdateByFilterNotExistingRow(): void
     {
         // arrange
         $dataForUpdate = [
@@ -1187,7 +1187,7 @@ SQL
         $filter->equals('name', 'NOT EXISTING NAME');
 
         // action
-        $count = $this->manager->update($dataForUpdate, $filter);
+        $count = $this->manager->updateByFilter($filter, $dataForUpdate);
 
         // assert
         self::assertEquals(0, $count);
@@ -1281,7 +1281,7 @@ SQL
         self::assertEquals(count($idList), $count);
 
         foreach ($dataForUpdateList as $i => $dataForUpdate) {
-            $insertedData = $this->manager->findByPk($idList[$i]);
+            $insertedData = $this->manager->findOneByPk($idList[$i]);
             self::assertEquals($dataForUpdate['name'], $insertedData['name']);
             self::assertEquals($dataForUpdate['birthday'], $insertedData['birthday']);
             self::assertEquals($dataForUpdate['age'], $insertedData['age']);
@@ -1321,7 +1321,7 @@ SQL
         $this->manager->batchUpdate($dataForUpdateList, $filterList);
     }
 
-    public function testSuccessDelete(): void
+    public function testSuccessDeleteByFilter(): void
     {
         // arrange
         $targetUser = self::USER_2;
@@ -1330,7 +1330,7 @@ SQL
         $filter->equals('name', $targetUser['name']);
 
         // action
-        $count = $this->manager->delete($filter);
+        $count = $this->manager->deleteByFilter($filter);
 
         // assert
         self::assertEquals(1, $count);
@@ -1341,14 +1341,14 @@ SQL
         self::assertNull($deletedRow);
     }
 
-    public function testSuccessDeleteNotExistingRow(): void
+    public function testSuccessDeleteByFilterNotExistingRow(): void
     {
         // arrange
         $filter = new Filter();
         $filter->equals('name', 'NOT EXISTING NAME');
 
         // action
-        $count = $this->manager->delete($filter);
+        $count = $this->manager->deleteByFilter($filter);
 
         // assert
         self::assertEquals(0, $count);
@@ -1384,7 +1384,7 @@ SQL
         self::assertEquals(0, $totalCount);
     }
 
-    public function testSuccessSoftDelete(): void
+    public function testSuccessSoftDeleteByFilter(): void
     {
         // arrange
         $targetUser = self::USER_4;
@@ -1393,7 +1393,7 @@ SQL
         $filter->equals('name', $targetUser['name']);
 
         // action
-        $count = $this->manager->softDelete($filter);
+        $count = $this->manager->softDeleteByFilter($filter);
 
         // assert
         self::assertEquals(1, $count);
@@ -1444,7 +1444,7 @@ SQL
     public function testSuccessGetCountWithoutAnything(): void
     {
         // action
-        $count = $this->manager->getCount(new Filter());
+        $count = $this->manager->getCount();
 
         // assert
         self::assertEquals(3, $count);
