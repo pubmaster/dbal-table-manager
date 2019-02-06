@@ -17,6 +17,7 @@ use DBALTableManager\Query\BulkInsertQuery;
 use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
@@ -135,7 +136,7 @@ abstract class BaseManager
                     . ' '
                     . $condition->getOperator()
                     . ' '
-                    . $query->createNamedParameter($condition->getValue())
+                    . $query->createNamedParameter($condition->getValue(), $this->getPdoType($condition->getColumn()))
                 );
             }
 
@@ -169,7 +170,11 @@ abstract class BaseManager
                 $value = ($condition->isStrictFromBeginning() ? '' : '%')
                     . $this->stringUtils->prepareSqlLikeOperator($condition->getValue())
                     . ($condition->isStrictToEnd() ? '' : '%');
-                $query->andWhere($condition->getColumn() . ' LIKE ' . $query->createNamedParameter($value));
+                $query->andWhere(
+                    $condition->getColumn()
+                    . ' LIKE ' .
+                    $query->createNamedParameter($value, $this->getPdoType($condition->getColumn()))
+                );
             }
 
             else if ($condition instanceof RawSqlCondition) {
@@ -291,7 +296,7 @@ abstract class BaseManager
 
         if (!is_array($pk)) {
             $firstPkColumn = $this->getEntity()->getPrimaryKey()[0];
-            $query->andWhere($firstPkColumn . ' = ' . $query->createNamedParameter($pk));
+            $query->andWhere($firstPkColumn . ' = ' . $query->createNamedParameter($pk, $this->getPdoType($firstPkColumn)));
         } else {
             $this->checkColumnList(array_keys($pk));
 
@@ -299,7 +304,7 @@ abstract class BaseManager
                 if (!isset($pk[$pkColumn])) {
                     throw InvalidRequestException::withNoPrimaryKeyValue($pkColumn);
                 }
-                $query->andWhere($pkColumn . ' = ' . $query->createNamedParameter($pk[$pkColumn]));
+                $query->andWhere($pkColumn . ' = ' . $query->createNamedParameter($pk[$pkColumn], $this->getPdoType($pkColumn)));
             }
         }
 
@@ -332,7 +337,7 @@ abstract class BaseManager
 
         $values = [];
         foreach ($data as $key => $value) {
-            $values[$key] = $query->createNamedParameter($value);
+            $values[$key] = $query->createNamedParameter($value, $this->getPdoType($key));
         }
         $query->values($values);
 
@@ -430,7 +435,7 @@ abstract class BaseManager
 
         $values = [];
         foreach ($data as $key => $value) {
-            $query->set($key, $query->createNamedParameter($value));
+            $query->set($key, $query->createNamedParameter($value, $this->getPdoType($key)));
         }
         $query->values($values);
     }
@@ -631,6 +636,28 @@ abstract class BaseManager
         $deletedAtField = $this->getEntity()->getDeletedAtField();
         if ($deletedAtField === null || $deletedAtField === '') {
             throw EntityDefinitionException::withNoDeletedAtColumnDefined();
+        }
+    }
+
+    /**
+     * @param string $columnName
+     *
+     * @return int
+     */
+    private function getPdoType(string $columnName): int
+    {
+        $this->checkColumnList([$columnName]);
+        $columnType = $this->getEntity()->getFieldMap()[$columnName];
+
+        switch ($columnType) {
+            case 'bool':
+            case 'boolean':
+                return ParameterType::BOOLEAN;
+            case 'int':
+            case 'integer':
+                return ParameterType::INTEGER;
+            default:
+                return ParameterType::STRING;
         }
     }
 }
