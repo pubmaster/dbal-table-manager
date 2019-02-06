@@ -8,24 +8,21 @@ use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Filter;
 use DBALTableManager\Pagination;
 use DBALTableManager\Sorting;
-use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
-use Doctrine\DBAL\DriverManager;
 use PHPUnit\DbUnit\Database\DefaultConnection as DbUnitDefaultConnection;
 use PHPUnit\DbUnit\TestCase;
-use Tests\Support\DefaultConnection as DBALDefaultConnection;
 use Tests\Support\DefaultTestEntity;
-use Tests\Support\DefaultTestManager;
 
 /**
  * Class BaseManagerTest
  *
  * @package Tests
  */
-class BaseManagerTest extends TestCase
+abstract class BaseManagerTestFoundation extends TestCase
 {
-    private const DB_FOR_TESTS = 'db_for_tests';
-    private const USER_1 = [
+    abstract public function getDbNameForTests(): string;
+
+    protected const USER_1 = [
         'id' => 1,
         'name' => 'John',
         'birthday' => '2010-01-02',
@@ -36,7 +33,7 @@ class BaseManagerTest extends TestCase
         'updated_at' => '2018-04-04 12:44:22',
         'deleted_at' => null,
     ];
-    private const USER_2 = [
+    protected const USER_2 = [
         'id' => 2,
         'name' => 'Mister X',
         'birthday' => '2010-02-02',
@@ -47,7 +44,7 @@ class BaseManagerTest extends TestCase
         'updated_at' => '2018-05-04 12:44:22',
         'deleted_at' => null,
     ];
-    private const USER_3 = [
+    protected const USER_3 = [
         'id' => 3,
         'name' => 'Soft Deleted User',
         'birthday' => '2010-03-02',
@@ -58,7 +55,7 @@ class BaseManagerTest extends TestCase
         'updated_at' => '2018-06-04 12:44:22',
         'deleted_at' => '2018-06-04 12:44:22',
     ];
-    private const USER_4 = [
+    protected const USER_4 = [
         'id' => 4,
         'name' => 'Someone',
         'birthday' => null,
@@ -72,78 +69,28 @@ class BaseManagerTest extends TestCase
     /**
      * @var \PDO
      */
-    static private $pdo;
+    static protected $pdo;
     /**
      * @var BaseConnectionInterface
      */
-    private $dbalConnection;
+    protected $dbalConnection;
     /**
      * @var DbUnitDefaultConnection
      */
-    private $phpUnitDbConnection;
+    protected $phpUnitDbConnection;
     /**
      * @var BaseManager
      */
-    private $manager;
+    protected $manager;
     /**
      * @var TypeConverter
      */
-    private $typeConverter;
-
-    protected function setUp(): void
-    {
-        /** @var BaseConnectionInterface $connection */
-        $this->dbalConnection = DriverManager::getConnection([
-            'pdo' => $this->getPdo(),
-            'wrapperClass' => DBALDefaultConnection::class,
-        ]);
-//        $this->dbalConnection->getConfiguration()->setSQLLogger(new \Tests\Support\EchoSQLLogger());
-
-        $this->typeConverter = new TypeConverter();
-        $this->manager = new DefaultTestManager($this->dbalConnection, $this->typeConverter, new StringUtils());
-
-        $this->getPdo()->exec('CREATE DATABASE IF NOT EXISTS `' . self::DB_FOR_TESTS . '`');
-        $this->getPdo()->exec('USE `' . self::DB_FOR_TESTS . '`');
-        $this->getPdo()->exec(<<<SQL
-CREATE TABLE IF NOT EXISTS `user` (
-	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`name` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci',
-	`birthday` DATE NULL DEFAULT NULL,
-	`age` INT(11) NOT NULL,
-	`weight` FLOAT NOT NULL,
-	`married` TINYINT(4) NOT NULL,
-	`created_at` TIMESTAMP NULL DEFAULT NULL,
-	`updated_at` TIMESTAMP NULL DEFAULT NULL,
-	`deleted_at` TIMESTAMP NULL DEFAULT NULL,
-	PRIMARY KEY (`id`)
-)
-COLLATE='utf8mb4_unicode_ci'
-ENGINE=InnoDB
-;
-SQL
-        );
-
-        parent::setUp();
-    }
+    protected $typeConverter;
 
     /**
      * @return \PDO
      */
-    protected function getPdo(): \PDO
-    {
-        if (self::$pdo !== null) {
-            return self::$pdo;
-        }
-
-        $username = 'root';
-        $password = 'nopassword';
-        $host = 'mysql';
-        $port = '3306';
-
-        self::$pdo = new \PDO("mysql:host=$host;port=$port", $username, $password);
-
-        return self::$pdo;
-    }
+    abstract protected function getPdo(): \PDO;
 
     protected function getConnection()
     {
@@ -151,11 +98,7 @@ SQL
             return $this->phpUnitDbConnection;
         }
 
-        if (self::$pdo === null) {
-            self::$pdo = new \PDO('sqlite::memory:');
-        }
-
-        $this->phpUnitDbConnection = $this->createDefaultDBConnection($this->getPdo(), self::DB_FOR_TESTS);
+        $this->phpUnitDbConnection = $this->createDefaultDBConnection($this->getPdo(), $this->getDbNameForTests());
 
         return $this->phpUnitDbConnection;
     }
