@@ -184,9 +184,9 @@ abstract class BaseManager
                 if ($showNotDeleted && $showDeleted) {
                     // show all
                 } else if ($showNotDeleted) {
-                    $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NOT NULL');
-                } else if ($showDeleted) {
                     $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NULL');
+                } else if ($showDeleted) {
+                    $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NOT NULL');
                 }
 
                 $hasDeletedAtFilter = true;

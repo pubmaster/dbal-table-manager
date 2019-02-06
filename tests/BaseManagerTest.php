@@ -538,7 +538,49 @@ SQL
         }
     }
 
-    public function testSuccessFindAllWithFilterDeleted(): void
+    public function testSuccessFindAllWithFilterDeletedTrue(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_3,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([true]);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterDeletedFalse(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([false]);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterDeletedTrueFalse(): void
     {
         // arrange
         $targetUsers = [
@@ -946,7 +988,39 @@ SQL
         self::assertEquals($targetUser['id'], $resultUser['id']);
     }
 
-    public function testSuccessFindOneByFilterWithFilterDeleted(): void
+    public function testSuccessFindOneByFilterWithFilterDeletedTrue(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+
+        $filter = new Filter();
+        $filter->deleted([true]);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
+    public function testSuccessFindOneByFilterWithFilterDeletedFalse(): void
+    {
+        // arrange
+        $targetUser = self::USER_1;
+
+        $filter = new Filter();
+        $filter->deleted([false]);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
+    public function testSuccessFindOneByFilterWithFilterDeletedTrueFalse(): void
     {
         // arrange
         $targetUser = self::USER_1;
@@ -1745,7 +1819,43 @@ SQL
         self::assertEquals(count($targetUsers), $count);
     }
 
-    public function testSuccessGetCountWithFilterDeleted(): void
+    public function testSuccessGetCountWithFilterDeletedTrue(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_3,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([true]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterDeletedFalse(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([false]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterDeletedTrueFalse(): void
     {
         // arrange
         $targetUsers = [
