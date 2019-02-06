@@ -12,7 +12,7 @@ use DBALTableManager\Entity\EntityInterface;
 class DefaultTestEntity implements EntityInterface
 {
     public const PK_COLUMN = 'id';
-    public const TABLE_NAME = 'user';
+    public const TABLE_NAME = 'user_table';
     public const CREATED_AT_COLUMN = 'created_at';
     public const UPDATED_AT_COLUMN = 'updated_at';
     public const DELETED_AT_COLUMN = 'deleted_at';
