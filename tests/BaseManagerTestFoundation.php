@@ -1129,6 +1129,39 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertNotNull($insertedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
     }
 
+    public function testSuccessInsertWithExplicitTimestamps(): void
+    {
+        // arrange
+        $dataForInsert = [
+            'name' => 'Inserted User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+            'created_at' => '2018-01-02 13:12:23',
+            'updated_at' => '2018-02-02 23:33:21',
+            'deleted_at' => '2018-03-02 21:00:11',
+        ];
+
+        // action
+        $id = $this->manager->insert($dataForInsert);
+
+        // assert
+        self::assertEquals(5, $id);
+
+        $insertedData = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertEquals($dataForInsert['name'], $insertedData['name']);
+        self::assertEquals($dataForInsert['birthday'], $insertedData['birthday']);
+        self::assertEquals($dataForInsert['age'], $insertedData['age']);
+        self::assertEquals($dataForInsert['weight'], $insertedData['weight']);
+        self::assertEquals($dataForInsert['married'], $insertedData['married']);
+        self::assertEquals($dataForInsert['created_at'], $insertedData['created_at']);
+        self::assertEquals($dataForInsert['updated_at'], $insertedData['updated_at']);
+        self::assertEquals($dataForInsert['deleted_at'], $insertedData['deleted_at']);
+    }
+
     public function testSuccessBatchInsert(): void
     {
         // arrange
@@ -1167,6 +1200,54 @@ abstract class BaseManagerTestFoundation extends TestCase
             self::assertEquals($dataForInsert['married'], $insertedData['married']);
             self::assertNotNull($insertedData[DefaultTestEntity::CREATED_AT_COLUMN]);
             self::assertNotNull($insertedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+        }
+    }
+
+    public function testSuccessBatchInsertWithExplicitTimestamps(): void
+    {
+        // arrange
+        $dataForInsertList = [
+            [
+                'name' => 'Inserted User',
+                'birthday' => '2016-02-02',
+                'age' => 44,
+                'weight' => 32.4,
+                'married' => 1,
+                'created_at' => '2018-01-02 13:12:23',
+                'updated_at' => '2018-02-02 23:33:21',
+                'deleted_at' => '2018-03-02 21:00:11',
+            ],
+            [
+                'name' => 'Inserted User 2',
+                'birthday' => '2014-02-02',
+                'age' => 23,
+                'weight' => 1.24,
+                'married' => 0,
+                'created_at' => '2018-05-04 13:12:23',
+                'updated_at' => '2018-06-04 23:33:21',
+                'deleted_at' => null,
+            ],
+        ];
+
+        // action
+        $count = $this->manager->batchInsert($dataForInsertList);
+
+        // assert
+        self::assertEquals(2, $count);
+
+        foreach ($dataForInsertList as $dataForInsert) {
+            $insertedData = $this->getOneRowFromDB([
+                'name' => $dataForInsert['name'],
+            ]);
+
+            self::assertEquals($dataForInsert['name'], $insertedData['name']);
+            self::assertEquals($dataForInsert['birthday'], $insertedData['birthday']);
+            self::assertEquals($dataForInsert['age'], $insertedData['age']);
+            self::assertEquals($dataForInsert['weight'], $insertedData['weight']);
+            self::assertEquals($dataForInsert['married'], $insertedData['married']);
+            self::assertEquals($dataForInsert['created_at'], $insertedData['created_at']);
+            self::assertEquals($dataForInsert['updated_at'], $insertedData['updated_at']);
+            self::assertEquals($dataForInsert['deleted_at'], $insertedData['deleted_at']);
         }
     }
 
@@ -1212,6 +1293,45 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
         self::assertEquals($dataForUpdate['married'], $updatedData['married']);
         self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+    }
+
+    public function testSuccessUpdateByFilterWithExplicitTimestamps(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+
+        $dataForUpdate = [
+            'name' => 'Updated User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+            'created_at' => '2018-01-02 13:12:23',
+            'updated_at' => '2018-02-02 23:33:21',
+            'deleted_at' => '2018-03-02 21:00:11',
+        ];
+
+        $filter = new Filter();
+        $filter->equals('name', $targetUser['name']);
+
+        // action
+        $count = $this->manager->updateByFilter($filter, $dataForUpdate);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $updatedData = $this->getOneRowFromDB([
+            'name' => $dataForUpdate['name'],
+        ]);
+        self::assertEquals($targetUser['id'], $updatedData['id']);
+        self::assertEquals($dataForUpdate['name'], $updatedData['name']);
+        self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
+        self::assertEquals($dataForUpdate['age'], $updatedData['age']);
+        self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
+        self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        self::assertEquals($dataForUpdate['created_at'], $updatedData['created_at']);
+        self::assertEquals($dataForUpdate['updated_at'], $updatedData['updated_at']);
+        self::assertEquals($dataForUpdate['deleted_at'], $updatedData['deleted_at']);
     }
 
     public function testSuccessUpdateByFilterNotExistingRow(): void
@@ -1264,6 +1384,42 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
         self::assertEquals($dataForUpdate['married'], $updatedData['married']);
         self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+    }
+
+    public function testSuccessUpdateByPkWithExplicitTimestamps(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+        $id = $targetUser['id'];
+
+        $dataForUpdate = [
+            'name' => 'Updated User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+            'created_at' => '2018-01-02 13:12:23',
+            'updated_at' => '2018-02-02 23:33:21',
+            'deleted_at' => '2018-03-02 21:00:11',
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $updatedData = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertEquals($dataForUpdate['name'], $updatedData['name']);
+        self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
+        self::assertEquals($dataForUpdate['age'], $updatedData['age']);
+        self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
+        self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        self::assertEquals($dataForUpdate['created_at'], $updatedData['created_at']);
+        self::assertEquals($dataForUpdate['updated_at'], $updatedData['updated_at']);
+        self::assertEquals($dataForUpdate['deleted_at'], $updatedData['deleted_at']);
     }
 
     public function testSuccessUpdateByPkNotExistingRow(): void
@@ -1357,12 +1513,71 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(count($idList), $count);
 
         foreach ($dataForUpdateList as $i => $dataForUpdate) {
-            $insertedData = $this->manager->findOneByPk($idList[$i]);
-            self::assertEquals($dataForUpdate['name'], $insertedData['name']);
-            self::assertEquals($dataForUpdate['birthday'], $insertedData['birthday']);
-            self::assertEquals($dataForUpdate['age'], $insertedData['age']);
-            self::assertEquals($dataForUpdate['weight'], $insertedData['weight']);
-            self::assertEquals($dataForUpdate['married'], $insertedData['married']);
+            $updatedData = $this->getOneRowFromDB([
+                'id' => $idList[$i],
+            ]);
+            self::assertEquals($dataForUpdate['name'], $updatedData['name']);
+            self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
+            self::assertEquals($dataForUpdate['age'], $updatedData['age']);
+            self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
+            self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        }
+    }
+
+    public function testSuccessBatchUpdateWithExplicitTimestamps(): void
+    {
+        // arrange
+        $dataForUpdateList = [
+            [
+                'name' => 'Updated User',
+                'birthday' => '2016-02-02',
+                'age' => 44,
+                'weight' => 32.4,
+                'married' => 1,
+                'created_at' => '2018-01-02 13:12:23',
+                'updated_at' => '2018-02-02 23:33:21',
+                'deleted_at' => '2018-03-02 21:00:11',
+            ],
+            [
+                'name' => 'Updated User 2',
+                'birthday' => '2014-02-02',
+                'age' => 23,
+                'weight' => 1.24,
+                'married' => 0,
+                'created_at' => '2018-05-04 13:12:23',
+                'updated_at' => '2018-06-04 23:33:21',
+                'deleted_at' => null,
+            ],
+        ];
+
+        $idList = [
+            self::USER_1['id'],
+            self::USER_2['id'],
+        ];
+
+        $filterList = [];
+        foreach ($idList as $id) {
+            $filterList[] = (new Filter())->equals('id', $id);
+        }
+
+        // action
+        $count = $this->manager->batchUpdate($dataForUpdateList, $filterList);
+
+        // assert
+        self::assertEquals(count($idList), $count);
+
+        foreach ($dataForUpdateList as $i => $dataForUpdate) {
+            $updatedData = $this->getOneRowFromDB([
+                'id' => $idList[$i],
+            ]);
+            self::assertEquals($dataForUpdate['name'], $updatedData['name']);
+            self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
+            self::assertEquals($dataForUpdate['age'], $updatedData['age']);
+            self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
+            self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+            self::assertEquals($dataForUpdate['created_at'], $updatedData['created_at']);
+            self::assertEquals($dataForUpdate['updated_at'], $updatedData['updated_at']);
+            self::assertEquals($dataForUpdate['deleted_at'], $updatedData['deleted_at']);
         }
     }
 

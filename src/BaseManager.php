@@ -329,8 +329,12 @@ abstract class BaseManager
             $currentTime = date('Y-m-d H:i:s');
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
-            $data[$createdAtField] = $currentTime;
-            $data[$updatedAtField] = $currentTime;
+            if (!array_key_exists($createdAtField, $data)) {
+                $data[$createdAtField] = $currentTime;
+            }
+            if (!array_key_exists($updatedAtField, $data)) {
+                $data[$updatedAtField] = $currentTime;
+            }
         }
 
         $this->checkColumnList(array_keys($data));
@@ -360,8 +364,12 @@ abstract class BaseManager
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
             foreach ($data as &$row) {
-                $row[$createdAtField] = $currentTime;
-                $row[$updatedAtField] = $currentTime;
+                if (!array_key_exists($createdAtField, $row)) {
+                    $row[$createdAtField] = $currentTime;
+                }
+                if (!array_key_exists($updatedAtField, $row)) {
+                    $row[$updatedAtField] = $currentTime;
+                }
 
                 $this->checkColumnList(array_keys($row));
             }
@@ -427,8 +435,12 @@ abstract class BaseManager
             $currentTime = date('Y-m-d H:i:s');
             $createdAtField = $this->getEntity()->getCreatedAtField();
             $updatedAtField = $this->getEntity()->getUpdatedAtField();
-            $data[$createdAtField] = $currentTime;
-            $data[$updatedAtField] = $currentTime;
+            if (!array_key_exists($createdAtField, $data)) {
+                $data[$createdAtField] = $currentTime;
+            }
+            if (!array_key_exists($updatedAtField, $data)) {
+                $data[$updatedAtField] = $currentTime;
+            }
         }
 
         $this->checkColumnList(array_keys($data));
