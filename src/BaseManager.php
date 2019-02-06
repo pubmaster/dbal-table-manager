@@ -262,17 +262,18 @@ abstract class BaseManager
     }
 
     /**
-     * @param $pk
+     * @param mixed $pk
+     * @param bool $withDeleted
      *
      * @return array
      */
-    public function findOneByPk($pk): ?array
+    public function findOneByPk($pk, bool $withDeleted = false): ?array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
         $query->from($this->getEntity()->getTableName());
 
-        $this->applyPkFilterToQuery($query, $pk);
+        $this->applyPkFilterToQuery($query, $pk, $withDeleted);
 
         $result = $query->execute()->fetch();
         if ($result === null || $result === false) {
@@ -284,9 +285,10 @@ abstract class BaseManager
 
     /**
      * @param QueryBuilder $query
-     * @param $pk
+     * @param mixed $pk
+     * @param bool $withDeleted
      */
-    protected function applyPkFilterToQuery(QueryBuilder $query, $pk): void
+    protected function applyPkFilterToQuery(QueryBuilder $query, $pk, bool $withDeleted = false): void
     {
         if ($this->getEntity()->getPrimaryKey() === []) {
             throw EntityDefinitionException::withNoPrimaryKeyDefined();
@@ -304,6 +306,10 @@ abstract class BaseManager
                 }
                 $query->andWhere($pkColumn . ' = ' . $query->createNamedParameter($pk[$pkColumn], $this->getPdoType($pkColumn)));
             }
+        }
+
+        if (false === $withDeleted && $this->getEntity()->isSoftDeletable()) {
+            $query->andWhere($this->getEntity()->getDeletedAtField() . ' IS NULL');
         }
     }
 

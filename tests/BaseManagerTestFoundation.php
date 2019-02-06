@@ -1063,6 +1063,31 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertNull($data);
     }
 
+    public function testSuccessFindOneByPkWithDeletedFalse(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id']);
+
+        // assert
+        self::assertNull($resultUser);
+    }
+
+    public function testSuccessFindOneByPkWithDeletedTrue(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id'], true);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
     public function testFailFindOneByPkNoPrimaryKeyValue(): void
     {
         // assert
@@ -1261,6 +1286,40 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(0, $count);
     }
 
+    public function testSuccessUpdateByPkSoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        $dataForUpdate = [
+            'name' => 'Updated User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(0, $count);
+
+        $updatedUser = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($updatedUser);
+        self::assertNotNull($updatedUser[DefaultTestEntity::DELETED_AT_COLUMN]);
+
+        self::assertEquals($targetUser['id'], $updatedUser['id']);
+        self::assertEquals($targetUser['name'], $updatedUser['name']);
+        self::assertEquals($targetUser['birthday'], $updatedUser['birthday']);
+        self::assertEquals($targetUser['age'], $updatedUser['age']);
+        self::assertEquals($targetUser['weight'], $updatedUser['weight']);
+        self::assertEquals($targetUser['married'], $updatedUser['married']);
+    }
+
     public function testSuccessBatchUpdate(): void
     {
         // arrange
@@ -1389,6 +1448,32 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertNull($deletedRow);
     }
 
+    public function testSuccessDeleteByPkSoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->deleteByPk($id);
+
+        // assert
+        self::assertEquals(0, $count);
+
+        $deletedRow = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+        self::assertNotNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+
+        self::assertEquals($targetUser['id'], $deletedRow['id']);
+        self::assertEquals($targetUser['name'], $deletedRow['name']);
+        self::assertEquals($targetUser['birthday'], $deletedRow['birthday']);
+        self::assertEquals($targetUser['age'], $deletedRow['age']);
+        self::assertEquals($targetUser['weight'], $deletedRow['weight']);
+        self::assertEquals($targetUser['married'], $deletedRow['married']);
+    }
+
     public function testSuccessDeleteAll(): void
     {
         // action
@@ -1439,6 +1524,32 @@ abstract class BaseManagerTestFoundation extends TestCase
         ]);
         self::assertNotNull($deletedRow);
         self::assertNotNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+    }
+
+    public function testSuccessSoftDeleteByPkAlreadySoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->softDeleteByPk($id);
+
+        // assert
+        self::assertEquals(0, $count);
+
+        $deletedRow = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+        self::assertNotNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+
+        self::assertEquals($targetUser['id'], $deletedRow['id']);
+        self::assertEquals($targetUser['name'], $deletedRow['name']);
+        self::assertEquals($targetUser['birthday'], $deletedRow['birthday']);
+        self::assertEquals($targetUser['age'], $deletedRow['age']);
+        self::assertEquals($targetUser['weight'], $deletedRow['weight']);
+        self::assertEquals($targetUser['married'], $deletedRow['married']);
     }
 
     public function testSuccessSoftDeleteAll(): void
