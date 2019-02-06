@@ -1046,6 +1046,31 @@ SQL
         self::assertNull($data);
     }
 
+    public function testSuccessFindOneByPkWithDeletedFalse(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id']);
+
+        // assert
+        self::assertNull($resultUser);
+    }
+
+    public function testSuccessFindOneByPkWithDeletedTrue(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id'], true);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
     public function testFailFindOneByPkNoPrimaryKeyValue(): void
     {
         // assert
@@ -1244,6 +1269,27 @@ SQL
         self::assertEquals(0, $count);
     }
 
+    public function testSuccessUpdateByPkSoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        $dataForUpdate = [
+            'name' => 'Updated User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(0, $count);
+    }
+
     public function testSuccessBatchUpdate(): void
     {
         // arrange
@@ -1372,6 +1418,24 @@ SQL
         self::assertNull($deletedRow);
     }
 
+    public function testSuccessDeleteByPkSoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->deleteByPk($id);
+
+        // assert
+        self::assertEquals(0, $count);
+
+        $deletedRow = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+    }
+
     public function testSuccessDeleteAll(): void
     {
         // action
@@ -1416,6 +1480,25 @@ SQL
 
         // assert
         self::assertEquals(1, $count);
+
+        $deletedRow = $this->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+        self::assertNotNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+    }
+
+    public function testSuccessSoftDeleteByPkAlreadySoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->softDeleteByPk($id);
+
+        // assert
+        self::assertEquals(0, $count);
 
         $deletedRow = $this->getOneRowFromDB([
             'id' => $id,
