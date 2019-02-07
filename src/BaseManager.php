@@ -326,15 +326,7 @@ abstract class BaseManager
         if ($this->getEntity()->isTimestampable()) {
             $this->checkTimestampableEntity();
 
-            $currentTime = date('Y-m-d H:i:s');
-            $createdAtField = $this->getEntity()->getCreatedAtField();
-            $updatedAtField = $this->getEntity()->getUpdatedAtField();
-            if (!array_key_exists($createdAtField, $data)) {
-                $data[$createdAtField] = $currentTime;
-            }
-            if (!array_key_exists($updatedAtField, $data)) {
-                $data[$updatedAtField] = $currentTime;
-            }
+            $this->setTimestampableValues($data);
         }
 
         $this->checkColumnList(array_keys($data));
@@ -360,16 +352,8 @@ abstract class BaseManager
         if ($this->getEntity()->isTimestampable()) {
             $this->checkTimestampableEntity();
 
-            $currentTime = date('Y-m-d H:i:s');
-            $createdAtField = $this->getEntity()->getCreatedAtField();
-            $updatedAtField = $this->getEntity()->getUpdatedAtField();
             foreach ($data as &$row) {
-                if (!array_key_exists($createdAtField, $row)) {
-                    $row[$createdAtField] = $currentTime;
-                }
-                if (!array_key_exists($updatedAtField, $row)) {
-                    $row[$updatedAtField] = $currentTime;
-                }
+                $this->setTimestampableValues($row);
 
                 $this->checkColumnList(array_keys($row));
             }
@@ -432,15 +416,7 @@ abstract class BaseManager
         if ($this->getEntity()->isTimestampable()) {
             $this->checkTimestampableEntity();
 
-            $currentTime = date('Y-m-d H:i:s');
-            $createdAtField = $this->getEntity()->getCreatedAtField();
-            $updatedAtField = $this->getEntity()->getUpdatedAtField();
-            if (!array_key_exists($createdAtField, $data)) {
-                $data[$createdAtField] = $currentTime;
-            }
-            if (!array_key_exists($updatedAtField, $data)) {
-                $data[$updatedAtField] = $currentTime;
-            }
+            $this->setTimestampableValues($data);
         }
 
         $this->checkColumnList(array_keys($data));
@@ -670,6 +646,22 @@ abstract class BaseManager
                 return ParameterType::INTEGER;
             default:
                 return ParameterType::STRING;
+        }
+    }
+
+    /**
+     * @param array $data
+     */
+    private function setTimestampableValues(array &$data): void
+    {
+        $currentTime = date('Y-m-d H:i:s');
+        $createdAtField = $this->getEntity()->getCreatedAtField();
+        $updatedAtField = $this->getEntity()->getUpdatedAtField();
+        if (!array_key_exists($createdAtField, $data)) {
+            $data[$createdAtField] = $currentTime;
+        }
+        if (!array_key_exists($updatedAtField, $data)) {
+            $data[$updatedAtField] = $currentTime;
         }
     }
 }
