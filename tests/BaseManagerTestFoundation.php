@@ -1292,6 +1292,8 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['age'], $updatedData['age']);
         self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
         self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+        self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
         self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
     }
 
@@ -1383,6 +1385,8 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['age'], $updatedData['age']);
         self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
         self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+        self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
         self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
     }
 
@@ -1496,6 +1500,10 @@ abstract class BaseManagerTestFoundation extends TestCase
             ],
         ];
 
+        $targetUserList = [
+            self::USER_1,
+            self::USER_2,
+        ];
         $idList = [
             self::USER_1['id'],
             self::USER_2['id'],
@@ -1516,11 +1524,14 @@ abstract class BaseManagerTestFoundation extends TestCase
             $updatedData = $this->getOneRowFromDB([
                 'id' => $idList[$i],
             ]);
+            $targetUser = $targetUserList[$i];
             self::assertEquals($dataForUpdate['name'], $updatedData['name']);
             self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
             self::assertEquals($dataForUpdate['age'], $updatedData['age']);
             self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
             self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+            self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+            self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
         }
     }
 

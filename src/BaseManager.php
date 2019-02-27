@@ -326,7 +326,10 @@ abstract class BaseManager
         if ($this->getEntity()->isTimestampable()) {
             $this->checkTimestampableEntity();
 
-            $this->setTimestampableValues($data);
+            $this->setTimestampableValues($data, [
+                $this->getEntity()->getCreatedAtField(),
+                $this->getEntity()->getUpdatedAtField(),
+            ]);
         }
 
         $this->checkColumnList(array_keys($data));
@@ -353,7 +356,10 @@ abstract class BaseManager
             $this->checkTimestampableEntity();
 
             foreach ($data as &$row) {
-                $this->setTimestampableValues($row);
+                $this->setTimestampableValues($row, [
+                    $this->getEntity()->getCreatedAtField(),
+                    $this->getEntity()->getUpdatedAtField(),
+                ]);
 
                 $this->checkColumnList(array_keys($row));
             }
@@ -416,7 +422,9 @@ abstract class BaseManager
         if ($this->getEntity()->isTimestampable()) {
             $this->checkTimestampableEntity();
 
-            $this->setTimestampableValues($data);
+            $this->setTimestampableValues($data, [
+                $this->getEntity()->getUpdatedAtField(),
+            ]);
         }
 
         $this->checkColumnList(array_keys($data));
@@ -651,17 +659,15 @@ abstract class BaseManager
 
     /**
      * @param array $data
+     * @param array $fieldList
      */
-    private function setTimestampableValues(array &$data): void
+    private function setTimestampableValues(array &$data, array $fieldList): void
     {
         $currentTime = date('Y-m-d H:i:s');
-        $createdAtField = $this->getEntity()->getCreatedAtField();
-        $updatedAtField = $this->getEntity()->getUpdatedAtField();
-        if (!array_key_exists($createdAtField, $data)) {
-            $data[$createdAtField] = $currentTime;
-        }
-        if (!array_key_exists($updatedAtField, $data)) {
-            $data[$updatedAtField] = $currentTime;
+        foreach ($fieldList as $field) {
+            if (!array_key_exists($field, $data)) {
+                $data[$field] = $currentTime;
+            }
         }
     }
 }
