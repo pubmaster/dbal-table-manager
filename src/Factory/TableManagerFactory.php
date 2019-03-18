@@ -26,11 +26,11 @@ class TableManagerFactory
     /**
      * @var TypeConverter
      */
-    protected $typeConverter;
+    private $typeConverter;
     /**
      * @var StringUtils
      */
-    protected $stringUtils;
+    private $stringUtils;
     /**
      * @var EntityTransformer
      */
