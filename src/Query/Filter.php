@@ -22,6 +22,14 @@ class Filter
     private $conditionList = [];
 
     /**
+     * @return Filter
+     */
+    public static function newInstance(): self
+    {
+        return new static();
+    }
+
+    /**
      * @return array
      */
     public function getConditionList(): array

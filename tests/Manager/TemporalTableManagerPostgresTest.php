@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests\Manager;
 
 use DBALTableManager\EntityTransformer\EntityTransformer;
@@ -11,6 +10,7 @@ use PHPUnit\DbUnit\Operation\Factory;
 use PHPUnit\DbUnit\Operation\Operation;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
+use Tests\Support\DefaultTestTemporalVersionEntity;
 use Tests\Support\WithPostgresConnection;
 
 /**
@@ -18,7 +18,7 @@ use Tests\Support\WithPostgresConnection;
  *
  * @package Tests\Manager
  */
-class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
+class TemporalTableManagerPostgresTest extends TemporalTableManagerTestFoundation
 {
     use WithPostgresConnection;
 
@@ -28,10 +28,15 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
 
         $typeConverter = new TypeConverter();
 
-        $this->dataRetriever = new DatabaseTableDataRetriever(
+        $this->staticDataRetriever = new DatabaseTableDataRetriever(
             $dbalConnection,
             $typeConverter,
             DefaultTestEntity::TABLE_NAME
+        );
+        $this->versionDataRetriever = new DatabaseTableDataRetriever(
+            $dbalConnection,
+            $typeConverter,
+            DefaultTestTemporalVersionEntity::TABLE_NAME
         );
 
         $tableManagerFactory = new TableManagerFactory(
@@ -40,17 +45,17 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
             new EntityTransformer()
         );
 
-        $this->manager = $tableManagerFactory->makeManagerForSingleTable(
+        $this->manager = $tableManagerFactory->makeManagerForTemporalTable(
             $dbalConnection,
-            new DefaultTestEntity()
+            new DefaultTestEntity(),
+            new DefaultTestTemporalVersionEntity()
         );
 
-        // Костыль из-за соседнего теста. Нужно что-то придумать с внешними ключами
-        $this->getPdo()->exec('DROP TABLE IF EXISTS "user_table_version"');
-
         $this->getPdo()->exec('DROP SEQUENCE IF EXISTS user_id_seq CASCADE;');
-        $this->getPdo()->exec('CREATE SEQUENCE user_id_seq RESTART WITH 5;');
+        $this->getPdo()->exec('DROP TABLE IF EXISTS "user_table_version"');
         $this->getPdo()->exec('DROP TABLE IF EXISTS "user_table"');
+
+        $this->getPdo()->exec('CREATE SEQUENCE user_id_seq RESTART WITH 5;');
         $this->getPdo()->exec('
             CREATE TABLE IF NOT EXISTS "user_table" (
                 "id" integer NOT NULL DEFAULT nextval(\'user_id_seq\'),
@@ -67,6 +72,19 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
            ;'
         );
         $this->getPdo()->exec('ALTER SEQUENCE user_id_seq OWNED BY user_table.id;');
+
+        $this->getPdo()->exec('
+            CREATE TABLE IF NOT EXISTS "user_table_version" (
+                "user_id" integer NOT NULL,
+                "effective_since" DATE NOT NULL,
+                "created_at" TIMESTAMP NOT NULL,
+                "salary" integer NOT NULL,
+                "fired" bool NOT NULL,
+                PRIMARY KEY (user_id, effective_since, created_at),
+                FOREIGN KEY (user_id) REFERENCES "user_table" (id) ON DELETE CASCADE 
+            )
+           ;'
+        );
 
         parent::setUp();
     }

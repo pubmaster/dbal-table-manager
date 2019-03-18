@@ -12,6 +12,8 @@ use DBALTableManager\Entity\TemporalVersionEntityInterface;
 class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
 {
     public const TABLE_NAME = 'user_table_version';
+    public const EFFECTIVE_SINCE_COLUMN = 'effective_since';
+    public const CREATED_AT_COLUMN = 'created_at';
     public const PK_COLUMN = [
         'user_id',
         'effective_since',
@@ -44,9 +46,11 @@ class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
     /**
      * @return array
      */
-    public function getStaticPkField(): array
+    public function getForeignKeyMap(): array
     {
-        return ['user_id'];
+        return [
+            'user_id' => 'id',
+        ];
     }
 
     /**
@@ -54,7 +58,7 @@ class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
      */
     public function getEffectiveSinceField(): string
     {
-        return 'effective_since';
+        return self::EFFECTIVE_SINCE_COLUMN;
     }
 
     /**
@@ -62,7 +66,7 @@ class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
      */
     public function getCreatedAtField(): string
     {
-        return 'created_at';
+        return self::CREATED_AT_COLUMN;
     }
 
     /**

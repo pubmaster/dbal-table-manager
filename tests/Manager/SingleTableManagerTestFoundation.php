@@ -1605,16 +1605,6 @@ abstract class SingleTableManagerTestFoundation extends TestCase
         }
     }
 
-    public function testFailBatchInsertEmptyList(): void
-    {
-        // assert
-        // action
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('You need to add at least one set of values before generating the SQL.');
-
-        $this->manager->batchInsert([]);
-    }
-
     public function testSuccessUpdateByFilter(): void
     {
         // arrange

@@ -22,7 +22,7 @@ interface TemporalVersionEntityInterface
     /**
      * @return array
      */
-    public function getStaticPkField(): array;
+    public function getForeignKeyMap(): array;
 
     /**
      * @return string

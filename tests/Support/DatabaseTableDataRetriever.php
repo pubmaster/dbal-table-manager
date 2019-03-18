@@ -71,10 +71,11 @@ class DatabaseTableDataRetriever
 
     /**
      * @param array $filters
+     * @param array $sorting
      *
      * @return array|null
      */
-    public function getOneRowFromDB(array $filters = []): ?array
+    public function getOneRowFromDB(array $filters = [], array $sorting = []): ?array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
@@ -82,6 +83,10 @@ class DatabaseTableDataRetriever
 
         foreach ($filters as $column => $value) {
             $query->andWhere($column . ' = ' . $query->createNamedParameter($value));
+        }
+
+        foreach ($sorting as $column => $order) {
+            $query->addOrderBy($column, $order);
         }
 
         $query->setMaxResults(1);
