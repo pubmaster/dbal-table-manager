@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager\Condition;
+namespace DBALTableManager\Query\Condition;
 
 /**
  * Class DeletedRowCondition
  *
- * @package DBALTableManager\Condition
+ * @package DBALTableManager\Query\Condition
  */
 class DeletedRowCondition
 {

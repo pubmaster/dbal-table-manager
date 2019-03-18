@@ -1,79 +1,86 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Manager;
 
+use DBALTableManager\BaseConnectionInterface;
 use DBALTableManager\Entity\EntityInterface;
-use DBALTableManager\Entity\EntityVersionInterface;
+use DBALTableManager\Entity\TemporalVersionEntityInterface;
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Exception\QueryExecutionException;
-use DBALTableManager\Util\StringUtils;
-use DBALTableManager\Util\TypeConverter;
+use DBALTableManager\Query\Filter;
+use DBALTableManager\Query\Pagination;
+use DBALTableManager\Query\Sorting;
+use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
+use DBALTableManager\TableRowCaster\TableRowCaster;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
- * Class BaseTemporalManager
+ * Class TemporalTableManager
  *
  * @package DBALTableManager
  */
-abstract class BaseTemporalManager extends ManagerFoundation
+class TemporalTableManager implements DataManipulationInterface
 {
     private const STATIC_TABLE_ALIAS = 'static';
     private const VERSION_TABLE_ALIAS = 'version';
     private const AS_OF_TIME_PARAM = 'as_of_time';
 
     /**
-     * @var BaseManager
+     * @var BaseConnectionInterface
+     */
+    private $connection;
+    /**
+     * @var SingleTableManager
      */
     private $staticManager;
     /**
-     * @var BaseManager
+     * @var SingleTableManager
      */
     private $versionManager;
+    /**
+     * @var QueryBuilderPreparer
+     */
+    private $queryBuilderPreparer;
+    /**
+     * @var TableRowCaster
+     */
+    private $tableRowCaster;
+    /**
+     * @var EntityInterface
+     */
+    private $staticEntity;
+    /**
+     * @var TemporalVersionEntityInterface
+     */
+    private $versionEntity;
 
     /**
-     * BaseTemporalManager constructor.
+     * TemporalTableManager constructor.
      *
      * @param BaseConnectionInterface $connection
-     * @param TypeConverter $typeConverter
-     * @param StringUtils $stringUtils
-     * @param BaseManager $staticManager
-     * @param BaseManager $versionManager
+     * @param SingleTableManager $staticManager
+     * @param SingleTableManager $versionManager
+     * @param QueryBuilderPreparer $queryBuilderPreparer
+     * @param TableRowCaster $tableRowCaster
+     * @param EntityInterface $staticEntity
+     * @param TemporalVersionEntityInterface $versionEntity
      */
     public function __construct(
         BaseConnectionInterface $connection,
-        TypeConverter $typeConverter,
-        StringUtils $stringUtils,
-        BaseManager $staticManager,
-        BaseManager $versionManager
+        SingleTableManager $staticManager,
+        SingleTableManager $versionManager,
+        QueryBuilderPreparer $queryBuilderPreparer,
+        TableRowCaster $tableRowCaster,
+        EntityInterface $staticEntity,
+        TemporalVersionEntityInterface $versionEntity
     ) {
-        parent::__construct($connection, $typeConverter, $stringUtils);
-
+        $this->connection = $connection;
         $this->staticManager = $staticManager;
         $this->versionManager = $versionManager;
-    }
-
-    /**
-     * @return EntityVersionInterface
-     */
-    abstract public function getVersionEntity(): EntityVersionInterface;
-
-    /**
-     * @return EntityInterface
-     */
-    private function getStaticEntity(): EntityInterface
-    {
-        return $this->getEntity();
-    }
-
-    /**
-     * @return array
-     */
-    protected function getFieldMap(): array
-    {
-        return array_merge(
-            $this->getStaticEntity()->getFieldMap(),
-            $this->getVersionEntity()->getFieldMap()
-        );
+        $this->queryBuilderPreparer = $queryBuilderPreparer;
+        $this->tableRowCaster = $tableRowCaster;
+        $this->staticEntity = $staticEntity;
+        $this->versionEntity = $versionEntity;
     }
 
     /**
@@ -87,7 +94,7 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $query = $this->makeQuery($asOfTime);
         $query->select('count(*) as count');
 
-        $this->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
 
         $result = $query->execute()->fetch();
         if ($result === null || $result === false) {
@@ -115,8 +122,8 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $query = $this->makeQuery($asOfTime);
         $this->applySelectAllColumns($query);
 
-        $this->applyFilters($query, $filter);
-        $this->applyOrderBy($query, $sorting);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyOrderBy($query, $sorting);
 
         if ($pagination !== null) {
             if ($pagination->getOffset() !== null) {
@@ -132,7 +139,7 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $result = [];
 
         foreach ($list as $row) {
-            $result[] = $this->prepareRow($row);
+            $result[] = $this->tableRowCaster->prepareRow($row);
         }
 
         return $result;
@@ -150,14 +157,14 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $query = $this->makeQuery($asOfTime);
         $this->applySelectAllColumns($query);
 
-        $this->applyPkFilterToQuery($query, $pk, $withDeleted);
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk, $withDeleted);
 
         $result = $query->execute()->fetch();
         if ($result === null || $result === false) {
             return null;
         }
 
-        return $this->prepareRow($result);
+        return $this->tableRowCaster->prepareRow($result);
     }
 
     /**
@@ -172,8 +179,8 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $query = $this->makeQuery($asOfTime);
         $this->applySelectAllColumns($query);
 
-        $this->applyFilters($query, $filter);
-        $this->applyOrderBy($query, $sorting);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyOrderBy($query, $sorting);
 
         $query->setMaxResults(1);
 
@@ -182,7 +189,7 @@ abstract class BaseTemporalManager extends ManagerFoundation
             return null;
         }
 
-        return $this->prepareRow($result);
+        return $this->tableRowCaster->prepareRow($result);
     }
 
     /**
@@ -192,14 +199,11 @@ abstract class BaseTemporalManager extends ManagerFoundation
      */
     private function makeQuery(?string $asOfTime = null): QueryBuilder
     {
-        $staticEntity = $this->getStaticEntity();
-        $versionEntity = $this->getVersionEntity();
-
         $query = $this->connection->createQueryBuilder();
-        $query->from($staticEntity->getTableName(), self::STATIC_TABLE_ALIAS);
+        $query->from($this->staticEntity->getTableName(), self::STATIC_TABLE_ALIAS);
         $query->join(
             self::STATIC_TABLE_ALIAS,
-            $versionEntity->getTableName(),
+            $this->versionEntity->getTableName(),
             self::VERSION_TABLE_ALIAS,
             $this->makeJoinCondition()
         );
@@ -218,34 +222,13 @@ abstract class BaseTemporalManager extends ManagerFoundation
 
         $select[] = self::STATIC_TABLE_ALIAS . '.*';
 
-        $versionEntity = $this->getVersionEntity();
-        $versionColumnList = array_keys($versionEntity->getFieldMap());
-        $versionColumnList = array_diff($versionColumnList, $versionEntity->getPrimaryKey());
+        $versionColumnList = array_keys($this->versionEntity->getFieldMap());
+        $versionColumnList = array_diff($versionColumnList, $this->versionEntity->getPrimaryKey());
         foreach ($versionColumnList as $column) {
             $select[] = self::VERSION_TABLE_ALIAS . '.' . $column;
         }
 
         $query->addSelect($select);
-    }
-
-    /**
-     * @param string $columnName
-     *
-     * @return string
-     */
-    protected function prepareColumnName(string $columnName): string
-    {
-        $staticEntity = $this->getStaticEntity();
-        if (array_key_exists($columnName, $staticEntity->getFieldMap())) {
-            return self::STATIC_TABLE_ALIAS . '.' . $columnName;
-        }
-
-        $versionEntity = $this->getVersionEntity();
-        if (array_key_exists($columnName, $versionEntity->getFieldMap())) {
-            return self::VERSION_TABLE_ALIAS . '.' . $columnName;
-        }
-
-        throw InvalidRequestException::withUnknownColumnList([$columnName]);
     }
 
     /**
@@ -255,8 +238,8 @@ abstract class BaseTemporalManager extends ManagerFoundation
     {
         $joinConditionList = [];
 
-        $staticEntity = $this->getStaticEntity();
-        $versionEntity = $this->getVersionEntity();
+        $staticEntity = $this->staticEntity;
+        $versionEntity = $this->versionEntity;
 
         $staticToVersionPkMap = [];
         foreach ($versionEntity->getStaticPkField() as $versionField) {
@@ -309,8 +292,8 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $staticData = [];
         $versionData = [];
 
-        $staticEntity = $this->getStaticEntity();
-        $versionEntity = $this->getVersionEntity();
+        $staticEntity = $this->staticEntity;
+        $versionEntity = $this->versionEntity;
 
         foreach ($data as $column => $value) {
             if (array_key_exists($column, $staticEntity->getFieldMap())) {
@@ -366,12 +349,15 @@ abstract class BaseTemporalManager extends ManagerFoundation
 
         $list = $this->findAll($filter);
         foreach ($list as $row) {
-            $pk = [];
-            foreach ($this->getStaticEntity()->getPrimaryKey() as $pkField) {
-                // todo: exception?
-                $pk[$pkField] = $row[$pkField] ?? null;
+            $staticPk = [];
+            foreach ($this->staticEntity->getPrimaryKey() as $staticPkField) {
+                if (false === isset($row[$staticPkField])) {
+                    throw QueryExecutionException::withRequiredDataMissing($staticPkField);
+                }
+
+                $staticPk[$staticPkField] = $row[$staticPkField];
             }
-            $result += $this->updateByPk($pk, $data);
+            $result += $this->updateByPk($staticPk, $data);
         }
 
         return $result;
@@ -388,8 +374,8 @@ abstract class BaseTemporalManager extends ManagerFoundation
         $staticData = [];
         $versionData = [];
 
-        $staticEntity = $this->getStaticEntity();
-        $versionEntity = $this->getVersionEntity();
+        $staticEntity = $this->staticEntity;
+        $versionEntity = $this->versionEntity;
 
         foreach ($data as $column => $value) {
             if (array_key_exists($column, $staticEntity->getFieldMap())) {
@@ -422,7 +408,7 @@ abstract class BaseTemporalManager extends ManagerFoundation
             $versionData[$versionEntity->getEffectiveSinceField()] = date('Y-m-d');
         }
 
-        // todo: do not insert if now changes
+        // todo: do not insert if no changes
         $this->versionManager->insert($versionData);
         $result++;
 

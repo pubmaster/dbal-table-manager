@@ -1,18 +1,18 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Query;
 
-use DBALTableManager\Condition\DeletedRowCondition;
-use DBALTableManager\Condition\NullableValueCondition;
-use DBALTableManager\Condition\RawSqlCondition;
-use DBALTableManager\Condition\ValueArrayCondition;
-use DBALTableManager\Condition\ValueComparisonCondition;
-use DBALTableManager\Condition\ValueLikeCondition;
+use DBALTableManager\Query\Condition\DeletedRowCondition;
+use DBALTableManager\Query\Condition\NullableValueCondition;
+use DBALTableManager\Query\Condition\RawSqlCondition;
+use DBALTableManager\Query\Condition\ValueArrayCondition;
+use DBALTableManager\Query\Condition\ValueComparisonCondition;
+use DBALTableManager\Query\Condition\ValueLikeCondition;
 
 /**
  * Class Filter
  *
- * @package DBALTableManager
+ * @package DBALTableManager\Query
  */
 class Filter
 {

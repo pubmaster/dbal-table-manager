@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Query;
 
 /**
  * Class Sorting
  *
- * @package DBALTableManager
+ * @package DBALTableManager\Query
  */
 class Sorting
 {

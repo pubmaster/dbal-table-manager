@@ -3,11 +3,11 @@
 namespace DBALTableManager\Entity;
 
 /**
- * Interface EntityVersionInterface
+ * Interface TemporalVersionEntityInterface
  *
  * @package DBALTableManager\Entity
  */
-interface EntityVersionInterface
+interface TemporalVersionEntityInterface
 {
     /**
      * @return string

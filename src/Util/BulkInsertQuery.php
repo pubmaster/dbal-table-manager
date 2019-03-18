@@ -17,7 +17,7 @@
  * <http://www.doctrine-project.org>.
  */
 
-namespace DBALTableManager\Query;
+namespace DBALTableManager\Util;
 
 use Doctrine\DBAL\Driver\Connection;
 use Doctrine\DBAL\Schema\Identifier;

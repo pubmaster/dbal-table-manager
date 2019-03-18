@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager\Condition;
+namespace DBALTableManager\Query\Condition;
 
 /**
  * Interface ColumnableCondition
  *
- * @package DBALTableManager\Condition
+ * @package DBALTableManager\Query\Condition
  */
 interface ColumnableCondition
 {

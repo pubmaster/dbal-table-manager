@@ -1,85 +1,76 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\QueryBuilder;
 
-use DBALTableManager\Condition\ColumnableCondition;
-use DBALTableManager\Condition\DeletedRowCondition;
-use DBALTableManager\Condition\NullableValueCondition;
-use DBALTableManager\Condition\RawSqlCondition;
-use DBALTableManager\Condition\ValueArrayCondition;
-use DBALTableManager\Condition\ValueComparisonCondition;
-use DBALTableManager\Condition\ValueLikeCondition;
 use DBALTableManager\Entity\EntityInterface;
+use DBALTableManager\EntityValidator\EntityValidator;
 use DBALTableManager\Exception\EntityDefinitionException;
 use DBALTableManager\Exception\InvalidRequestException;
+use DBALTableManager\Query\Condition\ColumnableCondition;
+use DBALTableManager\Query\Condition\DeletedRowCondition;
+use DBALTableManager\Query\Condition\NullableValueCondition;
+use DBALTableManager\Query\Condition\RawSqlCondition;
+use DBALTableManager\Query\Condition\ValueArrayCondition;
+use DBALTableManager\Query\Condition\ValueComparisonCondition;
+use DBALTableManager\Query\Condition\ValueLikeCondition;
+use DBALTableManager\Query\Filter;
+use DBALTableManager\Query\Sorting;
+use DBALTableManager\SchemaDescription\SchemaDescriptionInterface;
 use DBALTableManager\Util\StringUtils;
-use DBALTableManager\Util\TypeConverter;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
- * Class ManagerFoundation
+ * Class QueryBuilderPreparer
  *
- * @package DBALTableManager
+ * @package DBALTableManager\QueryBuilder
  */
-abstract class ManagerFoundation
+class QueryBuilderPreparer
 {
     /**
-     * @var BaseConnectionInterface
+     * @var EntityInterface
      */
-    protected $connection;
+    private $entity;
     /**
-     * @var TypeConverter
+     * @var SchemaDescriptionInterface
      */
-    protected $typeConverter;
+    private $schemaDescription;
+    /**
+     * @var EntityValidator
+     */
+    private $entityValidator;
     /**
      * @var StringUtils
      */
-    protected $stringUtils;
+    private $stringUtils;
 
     /**
-     * FoundationManager constructor.
+     * QueryBuilderPreparer constructor.
      *
-     * @param BaseConnectionInterface $connection
-     * @param TypeConverter $typeConverter
+     * @param EntityInterface $entity
+     * @param SchemaDescriptionInterface $schemaDescription
+     * @param EntityValidator $entityValidator
      * @param StringUtils $stringUtils
      */
     public function __construct(
-        BaseConnectionInterface $connection,
-        TypeConverter $typeConverter,
+        EntityInterface $entity,
+        SchemaDescriptionInterface $schemaDescription,
+        EntityValidator $entityValidator,
         StringUtils $stringUtils
-    ) {
-        $this->connection = $connection;
-        $this->typeConverter = $typeConverter;
+    )
+    {
+        $this->entity = $entity;
+        $this->schemaDescription = $schemaDescription;
+        $this->entityValidator = $entityValidator;
         $this->stringUtils = $stringUtils;
     }
-
-    /**
-     * @return EntityInterface
-     */
-    abstract public function getEntity(): EntityInterface;
-
-    /**
-     * @param array $row
-     *
-     * @return array
-     */
-    protected function prepareRow(array $row): array
-    {
-        return $this->typeConverter->convert($row, $this->getFieldMap());
-    }
-
-    /**
-     * @return array
-     */
-    abstract protected function getFieldMap(): array;
 
     /**
      * @param QueryBuilder $query
      * @param Filter|null $filter
      */
-    protected function applyFilters(QueryBuilder $query, ?Filter $filter): void
+    public function applyFilters(QueryBuilder $query, ?Filter $filter): void
     {
         $conditionList = [];
         if ($filter !== null) {
@@ -149,24 +140,24 @@ abstract class ManagerFoundation
             }
 
             else if ($condition instanceof DeletedRowCondition) {
-                $this->checkSoftDeletableEntity();
+                $this->entityValidator->checkSoftDeletableEntity();
 
                 $showNotDeleted = $condition->isShowNotDeleted();
                 $showDeleted = $condition->isShowDeleted();
                 if ($showNotDeleted && $showDeleted) {
                     // show all
                 } else if ($showNotDeleted) {
-                    $query->andWhere($this->prepareColumnName($this->getEntity()->getDeletedAtField()) . ' IS NULL');
+                    $query->andWhere($this->prepareColumnName($this->entity->getDeletedAtField()) . ' IS NULL');
                 } else if ($showDeleted) {
-                    $query->andWhere($this->prepareColumnName($this->getEntity()->getDeletedAtField()) . ' IS NOT NULL');
+                    $query->andWhere($this->prepareColumnName($this->entity->getDeletedAtField()) . ' IS NOT NULL');
                 }
 
                 $hasDeletedAtFilter = true;
             }
         }
 
-        if (!$hasDeletedAtFilter && $this->getEntity()->isSoftDeletable()) {
-            $query->andWhere($this->prepareColumnName($this->getEntity()->getDeletedAtField()) . ' IS NULL');
+        if (!$hasDeletedAtFilter && $this->entity->isSoftDeletable()) {
+            $query->andWhere($this->prepareColumnName($this->entity->getDeletedAtField()) . ' IS NULL');
         }
     }
 
@@ -174,7 +165,7 @@ abstract class ManagerFoundation
      * @param QueryBuilder $query
      * @param Sorting|null $sorting
      */
-    protected function applyOrderBy(QueryBuilder $query, ?Sorting $sorting): void
+    public function applyOrderBy(QueryBuilder $query, ?Sorting $sorting): void
     {
         $sortList = [];
         if ($sorting !== null) {
@@ -197,19 +188,19 @@ abstract class ManagerFoundation
      * @param mixed $pk
      * @param bool $withDeleted
      */
-    protected function applyPkFilterToQuery(QueryBuilder $query, $pk, bool $withDeleted = false): void
+    public function applyPkFilterToQuery(QueryBuilder $query, $pk, bool $withDeleted = false): void
     {
-        if ($this->getEntity()->getPrimaryKey() === []) {
+        if ($this->entity->getPrimaryKey() === []) {
             throw EntityDefinitionException::withNoPrimaryKeyDefined();
         }
 
         if (!is_array($pk)) {
-            $firstPkColumn = $this->getEntity()->getPrimaryKey()[0];
+            $firstPkColumn = $this->entity->getPrimaryKey()[0];
             $query->andWhere($this->prepareColumnName($firstPkColumn) . ' = ' . $query->createNamedParameter($pk, $this->getPdoType($firstPkColumn)));
         } else {
             $this->checkColumnList(array_keys($pk));
 
-            foreach ($this->getEntity()->getPrimaryKey() as $pkColumn) {
+            foreach ($this->entity->getPrimaryKey() as $pkColumn) {
                 if (!isset($pk[$pkColumn])) {
                     throw InvalidRequestException::withNoPrimaryKeyValue($pkColumn);
                 }
@@ -217,8 +208,8 @@ abstract class ManagerFoundation
             }
         }
 
-        if (false === $withDeleted && $this->getEntity()->isSoftDeletable()) {
-            $query->andWhere($this->prepareColumnName($this->getEntity()->getDeletedAtField()) . ' IS NULL');
+        if (false === $withDeleted && $this->entity->isSoftDeletable()) {
+            $query->andWhere($this->prepareColumnName($this->entity->getDeletedAtField()) . ' IS NULL');
         }
     }
 
@@ -227,48 +218,19 @@ abstract class ManagerFoundation
      *
      * @return string
      */
-    protected function prepareColumnName(string $columnName): string
+    public function prepareColumnName(string $columnName): string
     {
-        return $columnName;
+        return $this->schemaDescription->getPreparedColumnForQuery($columnName);
     }
 
     /**
      * @param string[] $columnList
      */
-    protected function checkColumnList(array $columnList): void
+    public function checkColumnList(array $columnList): void
     {
-        $unknownColumns = array_diff($columnList, array_keys($this->getFieldMap()));
+        $unknownColumns = array_diff($columnList, $this->schemaDescription->getColumnList());
         if ($unknownColumns !== []) {
             throw InvalidRequestException::withUnknownColumnList($unknownColumns);
-        }
-    }
-
-    protected function checkTimestampableEntity(): void
-    {
-        if ($this->getEntity()->isTimestampable()) {
-            return;
-        }
-
-        $createdAtField = $this->getEntity()->getCreatedAtField();
-        if ($createdAtField === null || $createdAtField === '') {
-            throw EntityDefinitionException::withNoCreatedAtColumnDefined();
-        }
-
-        $updatedAtField = $this->getEntity()->getUpdatedAtField();
-        if ($updatedAtField === null || $updatedAtField === '') {
-            throw EntityDefinitionException::withNoUpdatedAtColumnDefined();
-        }
-    }
-
-    protected function checkSoftDeletableEntity(): void
-    {
-        if ($this->getEntity()->isSoftDeletable()) {
-            return;
-        }
-
-        $deletedAtField = $this->getEntity()->getDeletedAtField();
-        if ($deletedAtField === null || $deletedAtField === '') {
-            throw EntityDefinitionException::withNoDeletedAtColumnDefined();
         }
     }
 
@@ -277,10 +239,9 @@ abstract class ManagerFoundation
      *
      * @return int
      */
-    protected function getPdoType(string $columnName): int
+    public function getPdoType(string $columnName): int
     {
-        $this->checkColumnList([$columnName]);
-        $columnType = $this->getFieldMap()[$columnName];
+        $columnType = $this->schemaDescription->getColumnType($columnName);
 
         switch ($columnType) {
             case 'bool':

@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager\Condition;
+namespace DBALTableManager\Query\Condition;
 
 /**
  * Class ValueComparisonCondition
  *
- * @package DBALTableManager\Condition
+ * @package DBALTableManager\Query\Condition
  */
 class ValueComparisonCondition implements ColumnableCondition
 {

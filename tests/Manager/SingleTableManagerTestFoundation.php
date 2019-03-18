@@ -1,27 +1,24 @@
 <?php
 
-namespace Tests;
+namespace Tests\Manager;
 
-use DBALTableManager\BaseConnectionInterface;
-use DBALTableManager\BaseManager;
 use DBALTableManager\Exception\InvalidRequestException;
-use DBALTableManager\Filter;
-use DBALTableManager\Pagination;
-use DBALTableManager\Sorting;
-use DBALTableManager\Util\TypeConverter;
+use DBALTableManager\Manager\SingleTableManager;
+use DBALTableManager\Query\Filter;
+use DBALTableManager\Query\Pagination;
+use DBALTableManager\Query\Sorting;
 use PHPUnit\DbUnit\Database\DefaultConnection as DbUnitDefaultConnection;
 use PHPUnit\DbUnit\TestCase;
+use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 
 /**
- * Class BaseManagerTest
+ * Class SingleTableManagerTestFoundation
  *
- * @package Tests
+ * @package Tests\Manager
  */
-abstract class BaseManagerTestFoundation extends TestCase
+abstract class SingleTableManagerTestFoundation extends TestCase
 {
-    abstract public function getDbNameForTests(): string;
-
     protected const USER_1 = [
         'id' => 1,
         'name' => 'John',
@@ -67,30 +64,27 @@ abstract class BaseManagerTestFoundation extends TestCase
         'deleted_at' => null,
     ];
     /**
-     * @var \PDO
-     */
-    static protected $pdo;
-    /**
-     * @var BaseConnectionInterface
-     */
-    protected $dbalConnection;
-    /**
      * @var DbUnitDefaultConnection
      */
     protected $phpUnitDbConnection;
     /**
-     * @var BaseManager
+     * @var SingleTableManager
      */
     protected $manager;
     /**
-     * @var TypeConverter
+     * @var DatabaseTableDataRetriever
      */
-    protected $typeConverter;
+    protected $dataRetriever;
 
     /**
      * @return \PDO
      */
     abstract protected function getPdo(): \PDO;
+
+    /**
+     * @return string
+     */
+    abstract protected function getDbNameForTests(): string;
 
     protected function getConnection()
     {
@@ -115,6 +109,366 @@ abstract class BaseManagerTestFoundation extends TestCase
                 ],
             ]
         );
+    }
+
+    public function testSuccessGetCountWithoutAnything(): void
+    {
+        // action
+        $count = $this->manager->getCount();
+
+        // assert
+        self::assertEquals(3, $count);
+    }
+
+    public function testSuccessGetCountWithFilterEquals(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+
+        $filter = new Filter();
+        $filter->equals('name', $targetUser['name']);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(1, $count);
+    }
+
+    public function testSuccessGetCountWithFilterNotEquals(): void
+    {
+        // arrange
+        $excludedUser = self::USER_4;
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->notEquals('name', $excludedUser['name']);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLessThan(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->lessThan('age', 22);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLessOrEquals(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->lessOrEquals('age', 22);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterGreaterThan(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->greaterThan('age', 22);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterGreaterOrEquals(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->greaterOrEquals('age', 22);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterIsNull(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->isNull('birthday');
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterIsNotNull(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->isNotNull('birthday');
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterInString(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->in('name', ['John', 'Mister X']);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterNotInString(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->notIn('name', ['John', 'Mister X']);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterInInt(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->in('age', [22, 13]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterNotInInt(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->notIn('age', [22, 13]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLikeNoBounds(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->like('name', 'ster');
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLikeFromBeginning(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->like('name', 'Mist', true);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLikeToEnd(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->like('name', 'er X', false, true);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterLikeAllBounds(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+        ];
+
+        $filter = new Filter();
+        $filter->like('name', 'Mister X', true, true);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterRawSql(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->rawSql('age > 40 OR age < 20');
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterDeletedTrue(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_3,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([true]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterDeletedFalse(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([false]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterDeletedTrueFalse(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_3,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->deleted([true, false]);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
     }
 
     public function testSuccessFindAllWithoutAnything(): void
@@ -1117,7 +1471,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(5, $id);
 
-        $insertedData = $this->getOneRowFromDB([
+        $insertedData = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertEquals($dataForInsert['name'], $insertedData['name']);
@@ -1149,7 +1503,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(5, $id);
 
-        $insertedData = $this->getOneRowFromDB([
+        $insertedData = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertEquals($dataForInsert['name'], $insertedData['name']);
@@ -1189,7 +1543,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(2, $count);
 
         foreach ($dataForInsertList as $dataForInsert) {
-            $insertedData = $this->getOneRowFromDB([
+            $insertedData = $this->dataRetriever->getOneRowFromDB([
                 'name' => $dataForInsert['name'],
             ]);
 
@@ -1236,7 +1590,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(2, $count);
 
         foreach ($dataForInsertList as $dataForInsert) {
-            $insertedData = $this->getOneRowFromDB([
+            $insertedData = $this->dataRetriever->getOneRowFromDB([
                 'name' => $dataForInsert['name'],
             ]);
 
@@ -1283,7 +1637,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $updatedData = $this->getOneRowFromDB([
+        $updatedData = $this->dataRetriever->getOneRowFromDB([
             'name' => $dataForUpdate['name'],
         ]);
         self::assertEquals($targetUser['id'], $updatedData['id']);
@@ -1322,7 +1676,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $updatedData = $this->getOneRowFromDB([
+        $updatedData = $this->dataRetriever->getOneRowFromDB([
             'name' => $dataForUpdate['name'],
         ]);
         self::assertEquals($targetUser['id'], $updatedData['id']);
@@ -1377,7 +1731,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $updatedData = $this->getOneRowFromDB([
+        $updatedData = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertEquals($dataForUpdate['name'], $updatedData['name']);
@@ -1413,7 +1767,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $updatedData = $this->getOneRowFromDB([
+        $updatedData = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertEquals($dataForUpdate['name'], $updatedData['name']);
@@ -1466,7 +1820,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(0, $count);
 
-        $updatedUser = $this->getOneRowFromDB([
+        $updatedUser = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertNotNull($updatedUser);
@@ -1521,7 +1875,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(count($idList), $count);
 
         foreach ($dataForUpdateList as $i => $dataForUpdate) {
-            $updatedData = $this->getOneRowFromDB([
+            $updatedData = $this->dataRetriever->getOneRowFromDB([
                 'id' => $idList[$i],
             ]);
             $targetUser = $targetUserList[$i];
@@ -1578,7 +1932,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         self::assertEquals(count($idList), $count);
 
         foreach ($dataForUpdateList as $i => $dataForUpdate) {
-            $updatedData = $this->getOneRowFromDB([
+            $updatedData = $this->dataRetriever->getOneRowFromDB([
                 'id' => $idList[$i],
             ]);
             self::assertEquals($dataForUpdate['name'], $updatedData['name']);
@@ -1637,7 +1991,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'name' => $targetUser['name'],
         ]);
         self::assertNull($deletedRow);
@@ -1668,7 +2022,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertNull($deletedRow);
@@ -1686,7 +2040,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(0, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertNotNull($deletedRow);
@@ -1708,7 +2062,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(4, $count);
 
-        $totalCount = $this->getCountFromDB();
+        $totalCount = $this->dataRetriever->getCountFromDB();
         self::assertEquals(0, $totalCount);
     }
 
@@ -1726,7 +2080,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'name' => $targetUser['name'],
         ]);
         self::assertNotNull($deletedRow);
@@ -1745,7 +2099,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(1, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertNotNull($deletedRow);
@@ -1764,7 +2118,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(0, $count);
 
-        $deletedRow = $this->getOneRowFromDB([
+        $deletedRow = $this->dataRetriever->getOneRowFromDB([
             'id' => $id,
         ]);
         self::assertNotNull($deletedRow);
@@ -1786,373 +2140,13 @@ abstract class BaseManagerTestFoundation extends TestCase
         // assert
         self::assertEquals(4, $count);
 
-        $totalCount = $this->getCountFromDB();
+        $totalCount = $this->dataRetriever->getCountFromDB();
         self::assertEquals(4, $totalCount);
 
-        $deletedRows = $this->getRowsFromDB();
+        $deletedRows = $this->dataRetriever->getRowsFromDB();
         foreach ($deletedRows as $deletedRow) {
             self::assertNotNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
         }
-    }
-
-    public function testSuccessGetCountWithoutAnything(): void
-    {
-        // action
-        $count = $this->manager->getCount();
-
-        // assert
-        self::assertEquals(3, $count);
-    }
-
-    public function testSuccessGetCountWithFilterEquals(): void
-    {
-        // arrange
-        $targetUser = self::USER_4;
-
-        $filter = new Filter();
-        $filter->equals('name', $targetUser['name']);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(1, $count);
-    }
-
-    public function testSuccessGetCountWithFilterNotEquals(): void
-    {
-        // arrange
-        $excludedUser = self::USER_4;
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->notEquals('name', $excludedUser['name']);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLessThan(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->lessThan('age', 22);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLessOrEquals(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->lessOrEquals('age', 22);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterGreaterThan(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->greaterThan('age', 22);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterGreaterOrEquals(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->greaterOrEquals('age', 22);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterIsNull(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->isNull('birthday');
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterIsNotNull(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->isNotNull('birthday');
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterInString(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->in('name', ['John', 'Mister X']);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterNotInString(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->notIn('name', ['John', 'Mister X']);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterInInt(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->in('age', [22, 13]);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterNotInInt(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->notIn('age', [22, 13]);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLikeNoBounds(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->like('name', 'ster');
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLikeFromBeginning(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->like('name', 'Mist', true);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLikeToEnd(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->like('name', 'er X', false, true);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterLikeAllBounds(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-        ];
-
-        $filter = new Filter();
-        $filter->like('name', 'Mister X', true, true);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterRawSql(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_2,
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->rawSql('age > 40 OR age < 20');
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterDeletedTrue(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_3,
-        ];
-
-        $filter = new Filter();
-        $filter->deleted([true]);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterDeletedFalse(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->deleted([false]);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
-    }
-
-    public function testSuccessGetCountWithFilterDeletedTrueFalse(): void
-    {
-        // arrange
-        $targetUsers = [
-            self::USER_1,
-            self::USER_2,
-            self::USER_3,
-            self::USER_4,
-        ];
-
-        $filter = new Filter();
-        $filter->deleted([true, false]);
-
-        // action
-        $count = $this->manager->getCount($filter);
-
-        // assert
-        self::assertEquals(count($targetUsers), $count);
     }
 
     public function testSuccessTruncate(): void
@@ -2161,81 +2155,7 @@ abstract class BaseManagerTestFoundation extends TestCase
         $this->manager->truncate();
 
         // assert
-        $totalCount = $this->getCount();
+        $totalCount = $this->dataRetriever->getCountFromDB();
         self::assertEquals(0, $totalCount);
-    }
-
-    /**
-     * @param array $filters
-     *
-     * @return array
-     */
-    private function getRowsFromDB(array $filters = []): array
-    {
-        $query = $this->dbalConnection->createQueryBuilder();
-        $query->select('*');
-        $query->from(DefaultTestEntity::TABLE_NAME);
-
-        foreach ($filters as $column => $value) {
-            $query->andWhere($column . ' = ' . $query->createNamedParameter($value));
-        }
-
-        $list = $query->execute()->fetchAll();
-
-        $result = [];
-
-        foreach ($list as $row) {
-            $result[] = $this->typeConverter->convert($row, DefaultTestEntity::FIELD_MAP);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array $filters
-     *
-     * @return array|null
-     */
-    private function getOneRowFromDB(array $filters = []): ?array
-    {
-        $query = $this->dbalConnection->createQueryBuilder();
-        $query->select('*');
-        $query->from(DefaultTestEntity::TABLE_NAME);
-
-        foreach ($filters as $column => $value) {
-            $query->andWhere($column . ' = ' . $query->createNamedParameter($value));
-        }
-
-        $query->setMaxResults(1);
-
-        $result = $query->execute()->fetch();
-        if ($result === null || $result === false) {
-            return null;
-        }
-
-        return $this->typeConverter->convert($result, DefaultTestEntity::FIELD_MAP);
-    }
-
-    /**
-     * @param array $filters
-     *
-     * @return int
-     */
-    private function getCountFromDB(array $filters = []): int
-    {
-        $query = $this->dbalConnection->createQueryBuilder();
-        $query->select('count(*) as count');
-        $query->from(DefaultTestEntity::TABLE_NAME);
-
-        foreach ($filters as $column => $value) {
-            $query->andWhere($column . ' = ' . $query->createNamedParameter($value));
-        }
-
-        $result = $query->execute()->fetch();
-        if ($result === null || $result === false) {
-            throw new \RuntimeException('Aggregation query returned no rows');
-        }
-
-        return $result['count'];
     }
 }

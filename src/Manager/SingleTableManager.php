@@ -1,26 +1,71 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Manager;
 
+use DBALTableManager\BaseConnectionInterface;
+use DBALTableManager\Entity\EntityInterface;
+use DBALTableManager\EntityValidator\EntityValidator;
 use DBALTableManager\Exception\EntityDefinitionException;
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Exception\QueryExecutionException;
-use DBALTableManager\Query\BulkInsertQuery;
+use DBALTableManager\Query\Filter;
+use DBALTableManager\Query\Pagination;
+use DBALTableManager\Query\Sorting;
+use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
+use DBALTableManager\TableRowCaster\TableRowCaster;
+use DBALTableManager\Util\BulkInsertQuery;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
- * Class BaseManager
+ * Class SingleTableManager
  *
- * @package DBALTableManager
+ * @package DBALTableManager\Manager
  */
-abstract class BaseManager extends ManagerFoundation
+class SingleTableManager implements DataManipulationInterface
 {
     /**
-     * @return array
+     * @var BaseConnectionInterface
      */
-    protected function getFieldMap(): array
+    protected $connection;
+    /**
+     * @var QueryBuilderPreparer
+     */
+    protected $queryBuilderPreparer;
+    /**
+     * @var TableRowCaster
+     */
+    private $tableRowCaster;
+    /**
+     * @var EntityValidator
+     */
+    private $entityValidator;
+    /**
+     * @var EntityInterface
+     */
+    private $entity;
+
+    /**
+     * SingleTableManager constructor.
+     *
+     * @param BaseConnectionInterface $connection
+     * @param QueryBuilderPreparer $queryBuilderPreparer
+     * @param TableRowCaster $tableRowCaster
+     * @param EntityValidator $entityValidator
+     * @param EntityInterface $entity
+     */
+    public function __construct(
+        BaseConnectionInterface $connection, 
+        QueryBuilderPreparer $queryBuilderPreparer,
+        TableRowCaster $tableRowCaster,
+        EntityValidator $entityValidator,
+        EntityInterface $entity
+    )
     {
-        return $this->getEntity()->getFieldMap();
+        $this->connection = $connection;
+        $this->queryBuilderPreparer = $queryBuilderPreparer;
+        $this->tableRowCaster = $tableRowCaster;
+        $this->entity = $entity;
+        $this->entityValidator = $entityValidator;
     }
 
     /**
@@ -32,9 +77,9 @@ abstract class BaseManager extends ManagerFoundation
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('count(*) as count');
-        $query->from($this->getEntity()->getTableName());
+        $query->from($this->entity->getTableName());
 
-        $this->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
 
         $result = $query->execute()->fetch();
         if ($result === null || $result === false) {
@@ -59,10 +104,10 @@ abstract class BaseManager extends ManagerFoundation
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
-        $query->from($this->getEntity()->getTableName());
+        $query->from($this->entity->getTableName());
 
-        $this->applyFilters($query, $filter);
-        $this->applyOrderBy($query, $sorting);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyOrderBy($query, $sorting);
 
         if ($pagination !== null) {
             if ($pagination->getOffset() !== null) {
@@ -78,7 +123,7 @@ abstract class BaseManager extends ManagerFoundation
         $result = [];
 
         foreach ($list as $row) {
-            $result[] = $this->prepareRow($row);
+            $result[] = $this->tableRowCaster->prepareRow($row);
         }
 
         return $result;
@@ -94,10 +139,10 @@ abstract class BaseManager extends ManagerFoundation
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
-        $query->from($this->getEntity()->getTableName());
+        $query->from($this->entity->getTableName());
 
-        $this->applyFilters($query, $filter);
-        $this->applyOrderBy($query, $sorting);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyOrderBy($query, $sorting);
 
         $query->setMaxResults(1);
 
@@ -106,7 +151,7 @@ abstract class BaseManager extends ManagerFoundation
             return null;
         }
 
-        return $this->prepareRow($result);
+        return $this->tableRowCaster->prepareRow($result);
     }
 
     /**
@@ -119,16 +164,16 @@ abstract class BaseManager extends ManagerFoundation
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
-        $query->from($this->getEntity()->getTableName());
+        $query->from($this->entity->getTableName());
 
-        $this->applyPkFilterToQuery($query, $pk, $withDeleted);
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk, $withDeleted);
 
         $result = $query->execute()->fetch();
         if ($result === null || $result === false) {
             return null;
         }
 
-        return $this->prepareRow($result);
+        return $this->tableRowCaster->prepareRow($result);
     }
 
     /**
@@ -139,22 +184,22 @@ abstract class BaseManager extends ManagerFoundation
     public function insert(array $data): string
     {
         $query = $this->connection->createQueryBuilder();
-        $query->insert($this->getEntity()->getTableName());
+        $query->insert($this->entity->getTableName());
 
-        if ($this->getEntity()->isTimestampable()) {
-            $this->checkTimestampableEntity();
+        if ($this->entity->isTimestampable()) {
+            $this->entityValidator->checkTimestampableEntity();
 
             $this->setTimestampableValues($data, [
-                $this->getEntity()->getCreatedAtField(),
-                $this->getEntity()->getUpdatedAtField(),
+                $this->entity->getCreatedAtField(),
+                $this->entity->getUpdatedAtField(),
             ]);
         }
 
-        $this->checkColumnList(array_keys($data));
+        $this->queryBuilderPreparer->checkColumnList(array_keys($data));
 
         $values = [];
         foreach ($data as $key => $value) {
-            $values[$key] = $query->createNamedParameter($value, $this->getPdoType($key));
+            $values[$key] = $query->createNamedParameter($value, $this->queryBuilderPreparer->getPdoType($key));
         }
         $query->values($values);
 
@@ -170,16 +215,16 @@ abstract class BaseManager extends ManagerFoundation
      */
     public function batchInsert(array $data): int
     {
-        if ($this->getEntity()->isTimestampable()) {
-            $this->checkTimestampableEntity();
+        if ($this->entity->isTimestampable()) {
+            $this->entityValidator->checkTimestampableEntity();
 
             foreach ($data as &$row) {
                 $this->setTimestampableValues($row, [
-                    $this->getEntity()->getCreatedAtField(),
-                    $this->getEntity()->getUpdatedAtField(),
+                    $this->entity->getCreatedAtField(),
+                    $this->entity->getUpdatedAtField(),
                 ]);
 
-                $this->checkColumnList(array_keys($row));
+                $this->queryBuilderPreparer->checkColumnList(array_keys($row));
             }
             unset($row);
         }
@@ -189,7 +234,7 @@ abstract class BaseManager extends ManagerFoundation
             $columns = array_keys($data[0]);
         }
 
-        $q = new BulkInsertQuery($this->connection, $this->getEntity()->getTableName(), $columns);
+        $q = new BulkInsertQuery($this->connection, $this->entity->getTableName(), $columns);
         foreach ($data as $row) {
             $q->addValues($row);
         }
@@ -206,10 +251,10 @@ abstract class BaseManager extends ManagerFoundation
     public function updateByFilter(Filter $filter, array $data): int
     {
         $query = $this->connection->createQueryBuilder();
-        $query->update($this->getEntity()->getTableName());
+        $query->update($this->entity->getTableName());
 
         $this->setValuesForUpdateQuery($query, $data);
-        $this->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
 
         return $query->execute();
     }
@@ -223,10 +268,10 @@ abstract class BaseManager extends ManagerFoundation
     public function updateByPk($pk, array $data): int
     {
         $query = $this->connection->createQueryBuilder();
-        $query->update($this->getEntity()->getTableName());
+        $query->update($this->entity->getTableName());
 
         $this->setValuesForUpdateQuery($query, $data);
-        $this->applyPkFilterToQuery($query, $pk);
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk);
 
         return $query->execute();
     }
@@ -260,9 +305,9 @@ abstract class BaseManager extends ManagerFoundation
     public function deleteByFilter(Filter $filter): int
     {
         $query = $this->connection->createQueryBuilder();
-        $query->delete($this->getEntity()->getTableName());
+        $query->delete($this->entity->getTableName());
 
-        $this->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
 
         return $query->execute();
     }
@@ -275,9 +320,9 @@ abstract class BaseManager extends ManagerFoundation
     public function deleteByPk($pk): int
     {
         $query = $this->connection->createQueryBuilder();
-        $query->delete($this->getEntity()->getTableName());
+        $query->delete($this->entity->getTableName());
 
-        $this->applyPkFilterToQuery($query, $pk);
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk);
 
         return $query->execute();
     }
@@ -288,7 +333,7 @@ abstract class BaseManager extends ManagerFoundation
     public function deleteAll(): int
     {
         $query = $this->connection->createQueryBuilder();
-        $query->delete($this->getEntity()->getTableName());
+        $query->delete($this->entity->getTableName());
 
         return $query->execute();
     }
@@ -300,14 +345,14 @@ abstract class BaseManager extends ManagerFoundation
      */
     public function softDeleteByFilter(Filter $filter): int
     {
-        if ($this->getEntity()->isSoftDeletable() === false) {
+        if ($this->entity->isSoftDeletable() === false) {
             throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
-        $query->update($this->getEntity()->getTableName());
+        $query->update($this->entity->getTableName());
 
-        $this->applyFilters($query, $filter);
+        $this->queryBuilderPreparer->applyFilters($query, $filter);
 
         $this->setSoftDeletedValues($query);
 
@@ -321,14 +366,14 @@ abstract class BaseManager extends ManagerFoundation
      */
     public function softDeleteByPk($pk): int
     {
-        if ($this->getEntity()->isSoftDeletable() === false) {
+        if ($this->entity->isSoftDeletable() === false) {
             throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
-        $query->update($this->getEntity()->getTableName());
+        $query->update($this->entity->getTableName());
 
-        $this->applyPkFilterToQuery($query, $pk);
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk);
 
         $this->setSoftDeletedValues($query);
 
@@ -340,12 +385,12 @@ abstract class BaseManager extends ManagerFoundation
      */
     public function softDeleteAll(): int
     {
-        if ($this->getEntity()->isSoftDeletable() === false) {
+        if ($this->entity->isSoftDeletable() === false) {
             throw EntityDefinitionException::withNotSoftDeletable();
         }
 
         $query = $this->connection->createQueryBuilder();
-        $query->update($this->getEntity()->getTableName());
+        $query->update($this->entity->getTableName());
 
         $this->setSoftDeletedValues($query);
 
@@ -355,7 +400,7 @@ abstract class BaseManager extends ManagerFoundation
     public function truncate(): void
     {
         $dbPlatform = $this->connection->getDatabasePlatform();
-        $q = $dbPlatform->getTruncateTableSQL($this->getEntity()->getTableName());
+        $q = $dbPlatform->getTruncateTableSQL($this->entity->getTableName());
         $this->connection->exec($q);
     }
 
@@ -366,12 +411,18 @@ abstract class BaseManager extends ManagerFoundation
     {
         $currentTime = date('Y-m-d H:i:s');
 
-        $this->checkSoftDeletableEntity();
-        $query->set($this->prepareColumnName($this->getEntity()->getDeletedAtField()), $query->createNamedParameter($currentTime));
+        $this->entityValidator->checkSoftDeletableEntity();
+        $query->set(
+            $this->queryBuilderPreparer->prepareColumnName($this->entity->getDeletedAtField()),
+            $query->createNamedParameter($currentTime)
+        );
 
-        if ($this->getEntity()->isTimestampable()) {
-            $this->checkTimestampableEntity();
-            $query->set($this->prepareColumnName($this->getEntity()->getUpdatedAtField()), $query->createNamedParameter($currentTime));
+        if ($this->entity->isTimestampable()) {
+            $this->entityValidator->checkTimestampableEntity();
+            $query->set(
+                $this->queryBuilderPreparer->prepareColumnName($this->entity->getUpdatedAtField()),
+                $query->createNamedParameter($currentTime)
+            );
         }
     }
 
@@ -381,19 +432,22 @@ abstract class BaseManager extends ManagerFoundation
      */
     private function setValuesForUpdateQuery(QueryBuilder $query, array $data): void
     {
-        if ($this->getEntity()->isTimestampable()) {
-            $this->checkTimestampableEntity();
+        if ($this->entity->isTimestampable()) {
+            $this->entityValidator->checkTimestampableEntity();
 
             $this->setTimestampableValues($data, [
-                $this->getEntity()->getUpdatedAtField(),
+                $this->entity->getUpdatedAtField(),
             ]);
         }
 
-        $this->checkColumnList(array_keys($data));
+        $this->queryBuilderPreparer->checkColumnList(array_keys($data));
 
         $values = [];
         foreach ($data as $key => $value) {
-            $query->set($this->prepareColumnName($key), $query->createNamedParameter($value, $this->getPdoType($key)));
+            $query->set(
+                $this->queryBuilderPreparer->prepareColumnName($key),
+                $query->createNamedParameter($value, $this->queryBuilderPreparer->getPdoType($key))
+            );
         }
         $query->values($values);
     }

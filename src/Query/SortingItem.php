@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Query;
 
 /**
  * Class SortingItem
  *
- * @package DBALTableManager
+ * @package DBALTableManager\Query
  */
 class SortingItem
 {

@@ -2,14 +2,14 @@
 
 namespace Tests\Support;
 
-use DBALTableManager\Entity\EntityVersionInterface;
+use DBALTableManager\Entity\TemporalVersionEntityInterface;
 
 /**
  * Class DefaultTestVersionEntity
  *
  * @package Tests\Support
  */
-class DefaultTestVersionEntity implements EntityVersionInterface
+class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
 {
     public const TABLE_NAME = 'user_table_version';
     public const PK_COLUMN = [

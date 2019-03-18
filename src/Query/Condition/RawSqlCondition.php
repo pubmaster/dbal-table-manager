@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager\Condition;
+namespace DBALTableManager\Query\Condition;
 
 /**
  * Class RawSqlCondition
  *
- * @package DBALTableManager\Condition
+ * @package DBALTableManager\Query\Condition
  */
 class RawSqlCondition
 {
