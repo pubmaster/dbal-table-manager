@@ -281,31 +281,11 @@ class TemporalTableManager implements DataManipulationInterface
      */
     public function insert(array $data): string
     {
-        $staticData = [];
-        $versionData = [];
-
-        $staticEntity = $this->staticEntity;
-        $versionEntity = $this->versionEntity;
-
-        foreach ($data as $column => $value) {
-            if (array_key_exists($column, $staticEntity->getFieldMap())) {
-                $staticData[$column] = $value;
-            } else if (array_key_exists($column, $versionEntity->getFieldMap())) {
-                $versionData[$column] = $value;
-            } else {
-                throw InvalidRequestException::withUnknownColumnList([$column]);
-            }
-        }
+        $staticData = $this->makeStaticDataForUpsert($data);
 
         $id = $this->staticManager->insert($staticData);
 
-        foreach ($versionEntity->getForeignKeyMap() as $versionField => $staticField) {
-            $versionData[$versionField] = $id;
-        }
-        $versionData[$versionEntity->getCreatedAtField()] = date('Y-m-d H:i:s');
-        if (!array_key_exists($versionEntity->getEffectiveSinceField(), $versionData)) {
-            $versionData[$versionEntity->getEffectiveSinceField()] = date('Y-m-d');
-        }
+        $versionData = $this->makeVersionDataForInsert($id, $data);
 
         $this->versionManager->insert($versionData);
 
@@ -341,18 +321,31 @@ class TemporalTableManager implements DataManipulationInterface
 
         $list = $this->staticManager->findAll($filter);
         foreach ($list as $row) {
-            $staticPk = [];
-            foreach ($this->staticEntity->getPrimaryKey() as $staticPkField) {
-                if (false === isset($row[$staticPkField])) {
-                    throw QueryExecutionException::withRequiredDataMissing($staticPkField);
-                }
-
-                $staticPk[$staticPkField] = $row[$staticPkField];
-            }
+            $staticPk = $this->extractStaticPkFromRow($row);
             $result += $this->updateByPk($staticPk, $data);
         }
 
         return $result;
+    }
+
+    /**
+     * @param array $row
+     *
+     * @return array
+     */
+    private function extractStaticPkFromRow(array $row): array
+    {
+        $staticPk = [];
+
+        foreach ($this->staticEntity->getPrimaryKey() as $staticPkField) {
+            if (false === isset($row[$staticPkField])) {
+                throw QueryExecutionException::withRequiredDataMissing($staticPkField);
+            }
+
+            $staticPk[$staticPkField] = $row[$staticPkField];
+        }
+
+        return $staticPk;
     }
 
     /**
@@ -363,44 +356,16 @@ class TemporalTableManager implements DataManipulationInterface
      */
     public function updateByPk($pk, array $data): int
     {
-        $staticData = [];
-        $versionData = [];
-
-        $staticEntity = $this->staticEntity;
-        $versionEntity = $this->versionEntity;
-
-        foreach ($data as $column => $value) {
-            if (array_key_exists($column, $staticEntity->getFieldMap())) {
-                $staticData[$column] = $value;
-            } else if (array_key_exists($column, $versionEntity->getFieldMap())) {
-                $versionData[$column] = $value;
-            } else {
-                throw InvalidRequestException::withUnknownColumnList([$column]);
-            }
-        }
-
         $existingRow = $this->staticManager->findOneByPk($pk);
         if ($existingRow === null) {
             return 0;
         }
 
+        $staticData = $this->makeStaticDataForUpsert($data);
+
         $result = $this->staticManager->updateByPk($pk, $staticData);
 
-        if (is_array($pk)) {
-            foreach ($versionEntity->getForeignKeyMap() as $versionField => $staticField) {
-                if (isset($pk[$staticField])) {
-                    $versionData[$versionField] = $pk[$staticField];
-                }
-            }
-        } else {
-            foreach ($versionEntity->getForeignKeyMap() as $versionField => $staticField) {
-                $versionData[$versionField] = $pk;
-            }
-        }
-        $versionData[$versionEntity->getCreatedAtField()] = date('Y-m-d H:i:s');
-        if (!array_key_exists($versionEntity->getEffectiveSinceField(), $versionData)) {
-            $versionData[$versionEntity->getEffectiveSinceField()] = date('Y-m-d');
-        }
+        $versionData = $this->makeVersionDataForInsert($pk, $data);
 
         $this->versionManager->insert($versionData);
         if ($result === 0) {
@@ -408,6 +373,72 @@ class TemporalTableManager implements DataManipulationInterface
         }
 
         return $result;
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return array
+     */
+    private function makeStaticDataForUpsert(array $data): array
+    {
+        $staticData = [];
+
+        foreach ($data as $column => $value) {
+            if (array_key_exists($column, $this->staticEntity->getFieldMap())) {
+                $staticData[$column] = $value;
+            }
+        }
+
+        return $staticData;
+    }
+
+    /**
+     * @param $staticPk
+     * @param array $data
+     *
+     * @return array
+     */
+    private function makeVersionDataForInsert($staticPk, array $data): array
+    {
+        $versionData = $this->makeVersionPkFromStaticPk($staticPk);
+
+        foreach ($data as $column => $value) {
+            if (array_key_exists($column, $this->versionEntity->getFieldMap())) {
+                $versionData[$column] = $value;
+            }
+        }
+
+        $versionData[$this->versionEntity->getCreatedAtField()] = date('Y-m-d H:i:s');
+        if (!array_key_exists($this->versionEntity->getEffectiveSinceField(), $versionData)) {
+            $versionData[$this->versionEntity->getEffectiveSinceField()] = date('Y-m-d');
+        }
+
+        return $versionData;
+    }
+
+    /**
+     * @param $staticPk
+     *
+     * @return array
+     */
+    private function makeVersionPkFromStaticPk($staticPk): array
+    {
+        $versionPk = [];
+
+        if (is_array($staticPk)) {
+            foreach ($this->versionEntity->getForeignKeyMap() as $versionField => $staticField) {
+                if (isset($staticPk[$staticField])) {
+                    $versionPk[$versionField] = $staticPk[$staticField];
+                }
+            }
+        } else {
+            foreach ($this->versionEntity->getForeignKeyMap() as $versionField => $staticField) {
+                $versionPk[$versionField] = $staticPk;
+            }
+        }
+
+        return $versionPk;
     }
 
     /**
@@ -442,14 +473,7 @@ class TemporalTableManager implements DataManipulationInterface
 
         $list = $this->staticManager->findAll($filter);
         foreach ($list as $row) {
-            $staticPk = [];
-            foreach ($this->staticEntity->getPrimaryKey() as $staticPkField) {
-                if (!isset($row[$staticPkField])) {
-                    throw QueryExecutionException::withRequiredDataMissing($staticPkField);
-                }
-
-                $staticPk[$staticPkField] = $row[$staticPkField];
-            }
+            $staticPk = $this->extractStaticPkFromRow($row);
             $result += $this->deleteByPk($staticPk);
         }
 
@@ -468,24 +492,35 @@ class TemporalTableManager implements DataManipulationInterface
             return 0;
         }
 
-        $versionEntity = $this->versionEntity;
-
-        $filter = new Filter();
-        if (is_array($pk)) {
-            foreach ($versionEntity->getForeignKeyMap() as $versionField => $staticField) {
-                if (!isset($pk[$staticField])) {
-                    throw InvalidRequestException::withNoPrimaryKeyValue($staticField);
-                }
-                $filter->equals($versionField, $pk[$staticField]);
-            }
-        } else {
-            foreach ($versionEntity->getForeignKeyMap() as $versionField => $staticField) {
-                $filter->equals($versionField, $pk);
-            }
-        }
+        $filter = $this->makeVersionFilterFromStaticPk($pk);
         $this->versionManager->deleteByFilter($filter);
 
         return $this->staticManager->deleteByPk($pk);
+    }
+
+    /**
+     * @param $staticPk
+     *
+     * @return Filter
+     */
+    private function makeVersionFilterFromStaticPk($staticPk): Filter
+    {
+        $filter = new Filter();
+
+        if (is_array($staticPk)) {
+            foreach ($this->versionEntity->getForeignKeyMap() as $versionField => $staticField) {
+                if (!isset($staticPk[$staticField])) {
+                    throw InvalidRequestException::withNoPrimaryKeyValue($staticField);
+                }
+                $filter->equals($versionField, $staticPk[$staticField]);
+            }
+        } else {
+            foreach ($this->versionEntity->getForeignKeyMap() as $versionField => $staticField) {
+                $filter->equals($versionField, $staticPk);
+            }
+        }
+
+        return $filter;
     }
 
     /**

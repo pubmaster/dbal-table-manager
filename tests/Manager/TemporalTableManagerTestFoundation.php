@@ -744,6 +744,115 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         ]);
     }
 
+    /**
+     * @dataProvider dataProviderForTemporalData
+     *
+     * @param array $args
+     * @param array|null $expected
+     */
+    public function testSuccessFindAllTemporalData(array $args, ?array $expected): void
+    {
+        // arrange
+        $targetUser = self::USER_2;
+
+        // action
+        $resultUserList = $this->manager->findAll(
+            Filter::newInstance()->equals('id', $targetUser['id']),
+            null,
+            null,
+            $args['as_of_time']
+        );
+
+        // assert
+        if ($expected === null) {
+            self::assertCount(0, $resultUserList);
+        } else {
+            self::assertCount(1, $resultUserList);
+
+            $resultUser = $resultUserList[0];
+
+            self::assertEquals($targetUser['name'], $resultUser['name']);
+            self::assertEquals($targetUser['birthday'], $resultUser['birthday']);
+            self::assertEquals($targetUser['age'], $resultUser['age']);
+            self::assertEquals($targetUser['weight'], $resultUser['weight']);
+            self::assertEquals($targetUser['married'], $resultUser['married']);
+
+            self::assertEquals($expected['salary'], $resultUser['salary']);
+            self::assertEquals($expected['fired'], $resultUser['fired']);
+        }
+    }
+
+    /**
+     * @dataProvider dataProviderForTemporalData
+     *
+     * @param array $args
+     * @param array|null $expected
+     */
+    public function testSuccessFindOneTemporalData(array $args, ?array $expected): void
+    {
+        // arrange
+        $targetUser = self::USER_2;
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id'], true, $args['as_of_time']);
+
+        // assert
+        if ($expected === null) {
+            self::assertNull($resultUser);
+        } else {
+            self::assertNotNull($resultUser);
+
+            self::assertEquals($targetUser['name'], $resultUser['name']);
+            self::assertEquals($targetUser['birthday'], $resultUser['birthday']);
+            self::assertEquals($targetUser['age'], $resultUser['age']);
+            self::assertEquals($targetUser['weight'], $resultUser['weight']);
+            self::assertEquals($targetUser['married'], $resultUser['married']);
+
+            self::assertEquals($expected['salary'], $resultUser['salary']);
+            self::assertEquals($expected['fired'], $resultUser['fired']);
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function dataProviderForTemporalData(): array
+    {
+        return [
+            [
+                'args' => [
+                    'as_of_time' => null,
+                ],
+                'expected' => self::USER_2_VERSION_2,
+            ],
+            [
+                'args' => [
+                    'as_of_time' => '2016-01-04 12:44:22',
+                ],
+                'expected' => null,
+            ],
+            [
+                'args' => [
+                    'as_of_time' => '2018-05-04 12:44:22',
+                ],
+                'expected' => self::USER_2_VERSION_1,
+            ],
+            [
+                'args' => [
+                    'as_of_time' => '2018-06-01 00:00:00',
+                ],
+                'expected' => self::USER_2_VERSION_1,
+            ],
+            [
+                'args' => [
+                    'as_of_time' => '2044-01-04 00:00:00',
+                ],
+                'expected' => self::USER_2_VERSION_3,
+            ],
+        ];
+    }
+
+
     public function testSuccessInsert(): void
     {
         // arrange
