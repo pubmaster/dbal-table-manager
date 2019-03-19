@@ -1,11 +1,11 @@
 <?php
 
-namespace DBALTableManager;
+namespace DBALTableManager\Query;
 
 /**
  * Class Sorting
  *
- * @package DBALTableManager
+ * @package DBALTableManager\Query
  */
 class Sorting
 {
@@ -18,8 +18,10 @@ class Sorting
     /**
      * @param string $column
      * @param string $order
+     *
+     * @return Sorting
      */
-    public function addSorting(string $column, string $order = self::SORT_ASC): void
+    public function addSorting(string $column, string $order = self::SORT_ASC): self
     {
         if ($column === '') {
             throw new \InvalidArgumentException('Column must not be an empty string');
@@ -32,6 +34,8 @@ class Sorting
         }
 
         $this->sortList[] = new SortingItem($column, $order);
+
+        return $this;
     }
 
     /**
@@ -40,5 +44,13 @@ class Sorting
     public function getSortList(): array
     {
         return $this->sortList;
+    }
+
+    /**
+     * @return Sorting
+     */
+    public static function newInstance(): self
+    {
+        return new static();
     }
 }
