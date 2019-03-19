@@ -356,23 +356,58 @@ class TemporalTableManager implements DataManipulationInterface
      */
     public function updateByPk($pk, array $data): int
     {
-        $existingRow = $this->staticManager->findOneByPk($pk);
+        $existingRow = $this->findOneByPk($pk);
         if ($existingRow === null) {
             return 0;
         }
 
         $staticData = $this->makeStaticDataForUpsert($data);
-
-        $result = $this->staticManager->updateByPk($pk, $staticData);
-
         $versionData = $this->makeVersionDataForInsert($pk, $data);
 
-        $this->versionManager->insert($versionData);
-        if ($result === 0) {
-            $result++;
+        $staticHasChanges = $this->hasChanges(
+            $existingRow,
+            $this->tableRowCaster->prepareRow($staticData)
+        );
+        $versionHasChanges = $this->hasChanges(
+            $existingRow,
+            $this->tableRowCaster->prepareRow($versionData),
+            $this->versionEntity->getPrimaryKey()
+        );
+
+        if ($staticHasChanges || $versionHasChanges) {
+            $this->staticManager->updateByPk($pk, $staticData);
+        }
+        if ($versionHasChanges) {
+            $this->versionManager->insert($versionData);
         }
 
-        return $result;
+        return 1;
+    }
+
+    /**
+     * @param array $before
+     * @param array $after
+     * @param array $excludedFieldList
+     *
+     * @return bool
+     */
+    private function hasChanges(array $before, array $after, array $excludedFieldList = []): bool
+    {
+        foreach ($after as $key => $value) {
+            if (true === in_array($key, $excludedFieldList, true)) {
+                continue;
+            }
+
+            if (false === array_key_exists($key, $before)) {
+                continue;
+            }
+
+            if ($before[$key] !== $value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -1298,6 +1298,106 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['fired'], $updatedData['fired']);
     }
 
+    public function testSuccessUpdateByPkNoChangesInStatic(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+        $id = $targetUser['id'];
+
+        $dataForUpdate = [
+            'name' => $targetUser['name'],
+            'birthday' => $targetUser['birthday'],
+            'age' => $targetUser['age'],
+            'weight' => $targetUser['weight'],
+            'married' => $targetUser['married'],
+
+            'salary' => 1000,
+            'fired' => 1,
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $updatedData = $this->staticDataRetriever->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertEquals($targetUser['name'], $updatedData['name']);
+        self::assertEquals($targetUser['birthday'], $updatedData['birthday']);
+        self::assertEquals($targetUser['age'], $updatedData['age']);
+        self::assertEquals($targetUser['weight'], $updatedData['weight']);
+        self::assertEquals($targetUser['married'], $updatedData['married']);
+        self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+        self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
+        self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+
+        $versionCount = $this->versionDataRetriever->getCountFromDB([
+            'user_id' => $targetUser['id'],
+        ]);
+        self::assertEquals(2, $versionCount);
+
+        $updatedData = $this->versionDataRetriever->getOneRowFromDB([
+            'user_id' => $targetUser['id'],
+        ], [
+            'created_at' => 'desc',
+        ]);
+        self::assertEquals($dataForUpdate['salary'], $updatedData['salary']);
+        self::assertEquals($dataForUpdate['fired'], $updatedData['fired']);
+    }
+
+    public function testSuccessUpdateByPkNoChangesInVersion(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+        $id = $targetUser['id'];
+
+        $targetUserVersion = self::USER_4_VERSION_1;
+
+        $dataForUpdate = [
+            'name' => 'Updated User',
+            'birthday' => '2016-02-02',
+            'age' => 44,
+            'weight' => 32.4,
+            'married' => 1,
+
+            'salary' => $targetUserVersion['salary'],
+            'fired' => $targetUserVersion['fired'],
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $updatedData = $this->staticDataRetriever->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertEquals($dataForUpdate['name'], $updatedData['name']);
+        self::assertEquals($dataForUpdate['birthday'], $updatedData['birthday']);
+        self::assertEquals($dataForUpdate['age'], $updatedData['age']);
+        self::assertEquals($dataForUpdate['weight'], $updatedData['weight']);
+        self::assertEquals($dataForUpdate['married'], $updatedData['married']);
+        self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+        self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
+        self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+
+        $versionCount = $this->versionDataRetriever->getCountFromDB([
+            'user_id' => $targetUser['id'],
+        ]);
+        self::assertEquals(1, $versionCount);
+
+        $updatedData = $this->versionDataRetriever->getOneRowFromDB([
+            'user_id' => $targetUser['id'],
+        ], [
+            'created_at' => 'desc',
+        ]);
+        self::assertEquals($targetUserVersion['salary'], $updatedData['salary']);
+        self::assertEquals($targetUserVersion['fired'], $updatedData['fired']);
+    }
+
     public function testSuccessUpdateByPkNotExistingRow(): void
     {
         // arrange
