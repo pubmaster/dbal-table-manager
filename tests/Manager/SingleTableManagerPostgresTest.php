@@ -9,6 +9,7 @@ use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 use PHPUnit\DbUnit\Operation\Factory;
 use PHPUnit\DbUnit\Operation\Operation;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 use Tests\Support\WithPostgresConnection;
@@ -26,6 +27,8 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
     {
         $dbalConnection = $this->makeConnection();
 
+        $this->currentTime = new CurrentTimeStub();
+
         $typeConverter = new TypeConverter();
 
         $this->dataRetriever = new DatabaseTableDataRetriever(
@@ -37,7 +40,8 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
         $tableManagerFactory = new TableManagerFactory(
             $typeConverter,
             new StringUtils(),
-            new EntityTransformer()
+            new EntityTransformer(),
+            $this->currentTime
         );
 
         $this->manager = $tableManagerFactory->makeManagerForSingleTable(
@@ -69,6 +73,13 @@ class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
         $this->getPdo()->exec('ALTER SEQUENCE user_id_seq OWNED BY user_table.id;');
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->currentTime->reset();
+
+        parent::tearDown();
     }
 
     /**

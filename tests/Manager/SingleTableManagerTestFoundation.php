@@ -9,6 +9,7 @@ use DBALTableManager\Query\Pagination;
 use DBALTableManager\Query\Sorting;
 use PHPUnit\DbUnit\Database\DefaultConnection as DbUnitDefaultConnection;
 use PHPUnit\DbUnit\TestCase;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 
@@ -75,6 +76,10 @@ abstract class SingleTableManagerTestFoundation extends TestCase
      * @var DatabaseTableDataRetriever
      */
     protected $dataRetriever;
+    /**
+     * @var CurrentTimeStub
+     */
+    protected $currentTime;
 
     /**
      * @return \PDO

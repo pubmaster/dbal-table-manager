@@ -14,6 +14,7 @@ use DBALTableManager\Query\Sorting;
 use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
 use DBALTableManager\TableRowCaster\TableRowCaster;
 use DBALTableManager\Util\BulkInsertQuery;
+use DBALTableManager\Util\CurrentTimeInterface;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Doctrine\DBAL\Query\QueryBuilder;
 
@@ -37,6 +38,10 @@ class SingleTableManager implements DataManipulationInterface
      */
     private $tableRowCaster;
     /**
+     * @var CurrentTimeInterface
+     */
+    private $currentTime;
+    /**
      * @var EntityValidator
      */
     private $entityValidator;
@@ -51,6 +56,7 @@ class SingleTableManager implements DataManipulationInterface
      * @param BaseConnectionInterface $connection
      * @param QueryBuilderPreparer $queryBuilderPreparer
      * @param TableRowCaster $tableRowCaster
+     * @param CurrentTimeInterface $currentTime
      * @param EntityValidator $entityValidator
      * @param EntityInterface $entity
      */
@@ -58,6 +64,7 @@ class SingleTableManager implements DataManipulationInterface
         BaseConnectionInterface $connection, 
         QueryBuilderPreparer $queryBuilderPreparer,
         TableRowCaster $tableRowCaster,
+        CurrentTimeInterface $currentTime,
         EntityValidator $entityValidator,
         EntityInterface $entity
     )
@@ -65,6 +72,7 @@ class SingleTableManager implements DataManipulationInterface
         $this->connection = $connection;
         $this->queryBuilderPreparer = $queryBuilderPreparer;
         $this->tableRowCaster = $tableRowCaster;
+        $this->currentTime = $currentTime;
         $this->entity = $entity;
         $this->entityValidator = $entityValidator;
     }
@@ -428,7 +436,7 @@ class SingleTableManager implements DataManipulationInterface
      */
     private function setSoftDeletedValues(QueryBuilder $query): void
     {
-        $currentTime = date('Y-m-d H:i:s');
+        $currentTime = $this->currentTime->getCurrentTime()->format('Y-m-d H:i:s');
 
         $this->entityValidator->checkSoftDeletableEntity();
         $query->set(
@@ -477,7 +485,7 @@ class SingleTableManager implements DataManipulationInterface
      */
     private function setTimestampableValues(array &$data, array $fieldList): void
     {
-        $currentTime = date('Y-m-d H:i:s');
+        $currentTime = $this->currentTime->getCurrentTime()->format('Y-m-d H:i:s');
         foreach ($fieldList as $field) {
             if (!array_key_exists($field, $data)) {
                 $data[$field] = $currentTime;

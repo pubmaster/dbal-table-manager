@@ -6,6 +6,7 @@ use DBALTableManager\EntityTransformer\EntityTransformer;
 use DBALTableManager\Factory\TableManagerFactory;
 use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 use Tests\Support\WithMysqlConnection;
@@ -23,6 +24,8 @@ class SingleTableManagerMysqlTest extends SingleTableManagerTestFoundation
     {
         $dbalConnection = $this->makeConnection();
 
+        $this->currentTime = new CurrentTimeStub();
+
         $typeConverter = new TypeConverter();
 
         $this->dataRetriever = new DatabaseTableDataRetriever(
@@ -34,7 +37,8 @@ class SingleTableManagerMysqlTest extends SingleTableManagerTestFoundation
         $tableManagerFactory = new TableManagerFactory(
             $typeConverter,
             new StringUtils(),
-            new EntityTransformer()
+            new EntityTransformer(),
+            $this->currentTime
         );
 
         $this->manager = $tableManagerFactory->makeManagerForSingleTable(
@@ -61,5 +65,12 @@ class SingleTableManagerMysqlTest extends SingleTableManagerTestFoundation
         );
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->currentTime->reset();
+
+        parent::tearDown();
     }
 }

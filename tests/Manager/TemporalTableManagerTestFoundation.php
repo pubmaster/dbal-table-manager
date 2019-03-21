@@ -9,6 +9,7 @@ use DBALTableManager\Query\Pagination;
 use DBALTableManager\Query\Sorting;
 use PHPUnit\DbUnit\Database\DefaultConnection as DbUnitDefaultConnection;
 use PHPUnit\DbUnit\TestCase;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 use Tests\Support\DefaultTestTemporalVersionEntity;
@@ -102,9 +103,16 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
     protected const USER_4_VERSION_1 = [
         'user_id' => 4,
         'effective_since' => '2018-05-04',
-        'created_at' => '2018-05-04 12:44:22',
+        'created_at' => '2018-05-04 11:44:22',
         'salary' => 10000,
         'fired' => 0,
+    ];
+    protected const USER_4_VERSION_2 = [
+        'user_id' => 4,
+        'effective_since' => '2018-05-04',
+        'created_at' => '2018-05-04 12:44:22',
+        'salary' => 5000,
+        'fired' => 1,
     ];
     /**
      * @var DbUnitDefaultConnection
@@ -122,6 +130,10 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
      * @var DatabaseTableDataRetriever
      */
     protected $versionDataRetriever;
+    /**
+     * @var CurrentTimeStub
+     */
+    protected $currentTime;
 
     /**
      * @return \PDO
@@ -161,6 +173,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
                     self::USER_2_VERSION_3,
                     self::USER_3_VERSION_1,
                     self::USER_4_VERSION_1,
+                    self::USER_4_VERSION_2,
                 ],
             ]
         );
@@ -852,6 +865,30 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         ];
     }
 
+    public function testSuccessFindOneTemporalDataCheckUsingCurrentTime(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+
+        $expectedVersion = self::USER_4_VERSION_1;
+
+        $this->currentTime->setDate($expectedVersion['created_at']);
+
+        // action
+        $resultUser = $this->manager->findOneByPk($targetUser['id'], true);
+
+        // assert
+        self::assertNotNull($resultUser);
+
+        self::assertEquals($targetUser['name'], $resultUser['name']);
+        self::assertEquals($targetUser['birthday'], $resultUser['birthday']);
+        self::assertEquals($targetUser['age'], $resultUser['age']);
+        self::assertEquals($targetUser['weight'], $resultUser['weight']);
+        self::assertEquals($targetUser['married'], $resultUser['married']);
+
+        self::assertEquals($expectedVersion['salary'], $resultUser['salary']);
+        self::assertEquals($expectedVersion['fired'], $resultUser['fired']);
+    }
 
     public function testSuccessInsert(): void
     {
@@ -1107,7 +1144,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(2, $versionCount);
+        self::assertEquals(3, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1162,7 +1199,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(2, $versionCount);
+        self::assertEquals(3, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1235,7 +1272,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(2, $versionCount);
+        self::assertEquals(3, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1287,7 +1324,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(2, $versionCount);
+        self::assertEquals(3, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1336,7 +1373,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(2, $versionCount);
+        self::assertEquals(3, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1353,7 +1390,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $targetUser = self::USER_4;
         $id = $targetUser['id'];
 
-        $targetUserVersion = self::USER_4_VERSION_1;
+        $targetUserVersion = self::USER_4_VERSION_2;
 
         $dataForUpdate = [
             'name' => 'Updated User',
@@ -1387,7 +1424,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(1, $versionCount);
+        self::assertEquals(2, $versionCount);
 
         $updatedData = $this->versionDataRetriever->getOneRowFromDB([
             'user_id' => $targetUser['id'],
@@ -1801,7 +1838,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $targetUser['id'],
         ]);
-        self::assertEquals(1, $versionCount);
+        self::assertEquals(2, $versionCount);
     }
 
     public function testSuccessSoftDeleteByPk(): void
@@ -1825,7 +1862,7 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         $versionCount = $this->versionDataRetriever->getCountFromDB([
             'user_id' => $id,
         ]);
-        self::assertEquals(1, $versionCount);
+        self::assertEquals(2, $versionCount);
     }
 
     public function testSuccessSoftDeleteByPkAlreadySoftDeletedRow(): void

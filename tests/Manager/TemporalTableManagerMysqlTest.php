@@ -6,6 +6,7 @@ use DBALTableManager\EntityTransformer\EntityTransformer;
 use DBALTableManager\Factory\TableManagerFactory;
 use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 use Tests\Support\DefaultTestTemporalVersionEntity;
@@ -24,6 +25,8 @@ class TemporalTableManagerMysqlTest extends TemporalTableManagerTestFoundation
     {
         $dbalConnection = $this->makeConnection();
 
+        $this->currentTime = new CurrentTimeStub();
+
         $typeConverter = new TypeConverter();
 
         $this->staticDataRetriever = new DatabaseTableDataRetriever(
@@ -40,7 +43,8 @@ class TemporalTableManagerMysqlTest extends TemporalTableManagerTestFoundation
         $tableManagerFactory = new TableManagerFactory(
             $typeConverter,
             new StringUtils(),
-            new EntityTransformer()
+            new EntityTransformer(),
+            $this->currentTime
         );
 
         $this->manager = $tableManagerFactory->makeManagerForTemporalTable(
@@ -83,5 +87,12 @@ class TemporalTableManagerMysqlTest extends TemporalTableManagerTestFoundation
         );
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->currentTime->reset();
+
+        parent::tearDown();
     }
 }
