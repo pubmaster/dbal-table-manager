@@ -12,6 +12,7 @@ use DBALTableManager\Query\Pagination;
 use DBALTableManager\Query\Sorting;
 use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
 use DBALTableManager\TableRowCaster\TableRowCaster;
+use DBALTableManager\Util\CurrentTimeInterface;
 use Doctrine\DBAL\Query\QueryBuilder;
 
 /**
@@ -24,6 +25,7 @@ class TemporalTableManager implements DataManipulationInterface
     private const STATIC_TABLE_ALIAS = 'static';
     private const VERSION_TABLE_ALIAS = 'version';
     private const AS_OF_TIME_PARAM = 'as_of_time';
+    private const TRANSACTION_TIME_PARAM = 'transaction_time';
 
     /**
      * @var BaseConnectionInterface
@@ -46,6 +48,10 @@ class TemporalTableManager implements DataManipulationInterface
      */
     private $tableRowCaster;
     /**
+     * @var CurrentTimeInterface
+     */
+    private $currentTime;
+    /**
      * @var EntityInterface
      */
     private $staticEntity;
@@ -62,6 +68,7 @@ class TemporalTableManager implements DataManipulationInterface
      * @param SingleTableManager $versionManager
      * @param QueryBuilderPreparer $queryBuilderPreparer
      * @param TableRowCaster $tableRowCaster
+     * @param CurrentTimeInterface $currentTime
      * @param EntityInterface $staticEntity
      * @param TemporalVersionEntityInterface $versionEntity
      */
@@ -71,6 +78,7 @@ class TemporalTableManager implements DataManipulationInterface
         SingleTableManager $versionManager,
         QueryBuilderPreparer $queryBuilderPreparer,
         TableRowCaster $tableRowCaster,
+        CurrentTimeInterface $currentTime,
         EntityInterface $staticEntity,
         TemporalVersionEntityInterface $versionEntity
     ) {
@@ -79,6 +87,7 @@ class TemporalTableManager implements DataManipulationInterface
         $this->versionManager = $versionManager;
         $this->queryBuilderPreparer = $queryBuilderPreparer;
         $this->tableRowCaster = $tableRowCaster;
+        $this->currentTime = $currentTime;
         $this->staticEntity = $staticEntity;
         $this->versionEntity = $versionEntity;
     }
@@ -208,7 +217,9 @@ class TemporalTableManager implements DataManipulationInterface
             $this->makeJoinCondition()
         );
 
-        $query->setParameter(':' . self::AS_OF_TIME_PARAM, $asOfTime ?? date('Y-m-d H:i:s'));
+        $now = $this->currentTime->getCurrentTime()->format('Y-m-d H:i:s');
+        $query->setParameter(':' . self::AS_OF_TIME_PARAM, $asOfTime ?? $now);
+        $query->setParameter(':' . self::TRANSACTION_TIME_PARAM, $now);
 
         return $query;
     }
@@ -444,9 +455,10 @@ class TemporalTableManager implements DataManipulationInterface
             }
         }
 
-        $versionData[$this->versionEntity->getCreatedAtField()] = date('Y-m-d H:i:s');
+        $now = $this->currentTime->getCurrentTime()->format('Y-m-d H:i:s');
+        $versionData[$this->versionEntity->getCreatedAtField()] = $now;
         if (!array_key_exists($this->versionEntity->getEffectiveSinceField(), $versionData)) {
-            $versionData[$this->versionEntity->getEffectiveSinceField()] = date('Y-m-d');
+            $versionData[$this->versionEntity->getEffectiveSinceField()] = $now;
         }
 
         return $versionData;

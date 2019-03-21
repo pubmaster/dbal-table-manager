@@ -8,6 +8,7 @@ use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 use PHPUnit\DbUnit\Operation\Factory;
 use PHPUnit\DbUnit\Operation\Operation;
+use Tests\Support\CurrentTimeStub;
 use Tests\Support\DatabaseTableDataRetriever;
 use Tests\Support\DefaultTestEntity;
 use Tests\Support\DefaultTestTemporalVersionEntity;
@@ -26,6 +27,8 @@ class TemporalTableManagerPostgresTest extends TemporalTableManagerTestFoundatio
     {
         $dbalConnection = $this->makeConnection();
 
+        $this->currentTime = new CurrentTimeStub();
+
         $typeConverter = new TypeConverter();
 
         $this->staticDataRetriever = new DatabaseTableDataRetriever(
@@ -42,7 +45,8 @@ class TemporalTableManagerPostgresTest extends TemporalTableManagerTestFoundatio
         $tableManagerFactory = new TableManagerFactory(
             $typeConverter,
             new StringUtils(),
-            new EntityTransformer()
+            new EntityTransformer(),
+            $this->currentTime
         );
 
         $this->manager = $tableManagerFactory->makeManagerForTemporalTable(
@@ -87,6 +91,13 @@ class TemporalTableManagerPostgresTest extends TemporalTableManagerTestFoundatio
         );
 
         parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->currentTime->reset();
+
+        parent::tearDown();
     }
 
     /**

@@ -13,6 +13,7 @@ use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
 use DBALTableManager\SchemaDescription\SingleTableSchemaDescription;
 use DBALTableManager\SchemaDescription\TemporalTableSchemaDescription;
 use DBALTableManager\TableRowCaster\TableRowCaster;
+use DBALTableManager\Util\CurrentTimeInterface;
 use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 
@@ -35,6 +36,10 @@ class TableManagerFactory
      * @var EntityTransformer
      */
     private $entityTransformer;
+    /**
+     * @var CurrentTimeInterface
+     */
+    private $currentTime;
 
     /**
      * BaseManagerFactory constructor.
@@ -42,15 +47,18 @@ class TableManagerFactory
      * @param TypeConverter $typeConverter
      * @param StringUtils $stringUtils
      * @param EntityTransformer $entityTransformer
+     * @param CurrentTimeInterface $currentTime
      */
     public function __construct(
         TypeConverter $typeConverter,
         StringUtils $stringUtils,
-        EntityTransformer $entityTransformer
+        EntityTransformer $entityTransformer,
+        CurrentTimeInterface $currentTime
     ) {
         $this->typeConverter = $typeConverter;
         $this->stringUtils = $stringUtils;
         $this->entityTransformer = $entityTransformer;
+        $this->currentTime = $currentTime;
     }
 
     /**
@@ -73,6 +81,7 @@ class TableManagerFactory
             $connection,
             $queryBuilderPreparer,
             $tableRowCaster,
+            $this->currentTime,
             $entityValidator,
             $entity
         );
@@ -101,6 +110,7 @@ class TableManagerFactory
             $versionManager,
             $queryBuilderPreparer,
             $tableRowCaster,
+            $this->currentTime,
             $staticEntity,
             $versionEntity
         );
