@@ -274,7 +274,7 @@ class TemporalTableManager implements DataManipulationInterface
             $createdWhereConditionList[] = "v2.{$versionField} = " . self::VERSION_TABLE_ALIAS . ".{$versionField}";
         }
         $createdWhereConditionList[] = "v2.{$versionEntity->getEffectiveSinceField()} = " . self::VERSION_TABLE_ALIAS . ".{$versionEntity->getEffectiveSinceField()}";
-        $createdWhereConditionList[] = "v2.{$versionEntity->getCreatedAtField()} <= :" . self::AS_OF_TIME_PARAM;
+        $createdWhereConditionList[] = "v2.{$versionEntity->getCreatedAtField()} <= :" . self::TRANSACTION_TIME_PARAM;
 
         $joinConditionList[] = self::VERSION_TABLE_ALIAS . ".{$versionEntity->getCreatedAtField()} = (
             SELECT MAX(v2.{$versionEntity->getCreatedAtField()})
