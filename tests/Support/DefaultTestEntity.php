@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use DBALTableManager\Entity\EntityInterface;
 
 /**
  * Class DefaultTestEntity
  *
- * @package Tests\Support
+ * @package Tests\DBALTableManager\Support
  */
 class DefaultTestEntity implements EntityInterface
 {

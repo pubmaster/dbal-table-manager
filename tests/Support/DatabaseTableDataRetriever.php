@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use DBALTableManager\BaseConnectionInterface;
 use DBALTableManager\Util\TypeConverter;
@@ -8,7 +8,7 @@ use DBALTableManager\Util\TypeConverter;
 /**
  * Class DatabaseTableDataRetriever
  *
- * @package Tests\Support
+ * @package Tests\DBALTableManager\Support
  */
 class DatabaseTableDataRetriever
 {

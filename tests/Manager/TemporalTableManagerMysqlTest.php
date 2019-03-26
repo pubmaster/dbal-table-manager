@@ -1,21 +1,21 @@
 <?php
 
-namespace Tests\Manager;
+namespace Tests\DBALTableManager\Manager;
 
 use DBALTableManager\EntityTransformer\EntityTransformer;
 use DBALTableManager\Factory\TableManagerFactory;
 use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
-use Tests\Support\CurrentTimeStub;
-use Tests\Support\DatabaseTableDataRetriever;
-use Tests\Support\DefaultTestEntity;
-use Tests\Support\DefaultTestTemporalVersionEntity;
-use Tests\Support\WithMysqlConnection;
+use Tests\DBALTableManager\Support\CurrentTimeStub;
+use Tests\DBALTableManager\Support\DatabaseTableDataRetriever;
+use Tests\DBALTableManager\Support\DefaultTestEntity;
+use Tests\DBALTableManager\Support\DefaultTestTemporalVersionEntity;
+use Tests\DBALTableManager\Support\WithMysqlConnection;
 
 /**
  * Class TemporalTableManagerMysqlTest
  *
- * @package Tests\Manager
+ * @package Tests\DBALTableManager\Manager
  */
 class TemporalTableManagerMysqlTest extends TemporalTableManagerTestFoundation
 {

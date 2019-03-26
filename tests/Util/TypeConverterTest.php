@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Util;
+namespace Tests\DBALTableManager\Util;
 
 use DBALTableManager\Util\TypeConverter;
 use PHPUnit\Framework\TestCase;
@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class TypeConverterTest
  *
- * @package Tests\Util
+ * @package Tests\DBALTableManager\Util
  */
 class TypeConverterTest extends TestCase
 {

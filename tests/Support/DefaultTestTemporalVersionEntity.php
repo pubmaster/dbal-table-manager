@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use DBALTableManager\Entity\TemporalVersionEntityInterface;
 
 /**
  * Class DefaultTestVersionEntity
  *
- * @package Tests\Support
+ * @package Tests\DBALTableManager\Support
  */
 class DefaultTestTemporalVersionEntity implements TemporalVersionEntityInterface
 {

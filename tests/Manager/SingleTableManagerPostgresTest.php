@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Tests\Manager;
+namespace Tests\DBALTableManager\Manager;
 
 use DBALTableManager\EntityTransformer\EntityTransformer;
 use DBALTableManager\Factory\TableManagerFactory;
@@ -9,15 +9,15 @@ use DBALTableManager\Util\StringUtils;
 use DBALTableManager\Util\TypeConverter;
 use PHPUnit\DbUnit\Operation\Factory;
 use PHPUnit\DbUnit\Operation\Operation;
-use Tests\Support\CurrentTimeStub;
-use Tests\Support\DatabaseTableDataRetriever;
-use Tests\Support\DefaultTestEntity;
-use Tests\Support\WithPostgresConnection;
+use Tests\DBALTableManager\Support\CurrentTimeStub;
+use Tests\DBALTableManager\Support\DatabaseTableDataRetriever;
+use Tests\DBALTableManager\Support\DefaultTestEntity;
+use Tests\DBALTableManager\Support\WithPostgresConnection;
 
 /**
  * Class SingleTableManagerPostgresTest
  *
- * @package Tests\Manager
+ * @package Tests\DBALTableManager\Manager
  */
 class SingleTableManagerPostgresTest extends SingleTableManagerTestFoundation
 {

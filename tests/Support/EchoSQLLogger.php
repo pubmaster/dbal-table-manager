@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use Doctrine\DBAL\Logging\SQLLogger;
 

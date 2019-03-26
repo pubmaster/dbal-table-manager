@@ -1,14 +1,14 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use Doctrine\DBAL\DriverManager;
-use Tests\Support\DefaultConnection as DBALDefaultConnection;
+use Tests\DBALTableManager\Support\DefaultConnection as DBALDefaultConnection;
 
 /**
  * Trait WithPostgresConnection
  *
- * @package Tests\Support
+ * @package Tests\DBALTableManager\Support
  */
 trait WithPostgresConnection
 {

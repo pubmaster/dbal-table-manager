@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\Support;
+namespace Tests\DBALTableManager\Support;
 
 use DBALTableManager\Util\CurrentTimeInterface;
 
 /**
  * Class CurrentTimeStub
  *
- * @package Tests\Support
+ * @package Tests\DBALTableManager\Support
  */
 class CurrentTimeStub implements CurrentTimeInterface
 {
