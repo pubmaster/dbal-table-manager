@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Manager;
+namespace Tests\DBALTableManager\Manager;
 
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Manager\SingleTableManager;
@@ -9,14 +9,14 @@ use DBALTableManager\Query\Pagination;
 use DBALTableManager\Query\Sorting;
 use PHPUnit\DbUnit\Database\DefaultConnection as DbUnitDefaultConnection;
 use PHPUnit\DbUnit\TestCase;
-use Tests\Support\CurrentTimeStub;
-use Tests\Support\DatabaseTableDataRetriever;
-use Tests\Support\DefaultTestEntity;
+use Tests\DBALTableManager\Support\CurrentTimeStub;
+use Tests\DBALTableManager\Support\DatabaseTableDataRetriever;
+use Tests\DBALTableManager\Support\DefaultTestEntity;
 
 /**
  * Class SingleTableManagerTestFoundation
  *
- * @package Tests\Manager
+ * @package Tests\DBALTableManager\Manager
  */
 abstract class SingleTableManagerTestFoundation extends TestCase
 {
