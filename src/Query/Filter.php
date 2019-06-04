@@ -142,12 +142,13 @@ class Filter
     /**
      * @param string $column
      * @param array $valueList
+     * @param bool $emptyAsNoFilter
      *
      * @return Filter
      */
-    public function in(string $column, array $valueList): self
+    public function in(string $column, array $valueList, bool $emptyAsNoFilter = false): self
     {
-        $this->conditionList[] = new ValueArrayCondition($column, $valueList, true);
+        $this->conditionList[] = new ValueArrayCondition($column, $valueList, true, $emptyAsNoFilter);
 
         return $this;
     }
@@ -155,12 +156,13 @@ class Filter
     /**
      * @param string $column
      * @param array $valueList
+     * @param bool $emptyAsNoFilter
      *
      * @return Filter
      */
-    public function notIn(string $column, array $valueList): self
+    public function notIn(string $column, array $valueList, bool $emptyAsNoFilter = false): self
     {
-        $this->conditionList[] = new ValueArrayCondition($column, $valueList, false);
+        $this->conditionList[] = new ValueArrayCondition($column, $valueList, false, $emptyAsNoFilter);
 
         return $this;
     }

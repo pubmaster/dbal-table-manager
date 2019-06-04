@@ -21,6 +21,10 @@ class ValueArrayCondition implements ColumnableCondition
      * @var boolean
      */
     private $isIncluded;
+    /**
+     * @var boolean
+     */
+    private $emptyAsNoFilter;
 
     /**
      * ValueArrayCondition constructor.
@@ -28,12 +32,14 @@ class ValueArrayCondition implements ColumnableCondition
      * @param string $column
      * @param array $values
      * @param bool $isIncluded
+     * @param bool $emptyAsNoFilter
      */
-    public function __construct(string $column, array $values, bool $isIncluded)
+    public function __construct(string $column, array $values, bool $isIncluded, bool $emptyAsNoFilter)
     {
         $this->column = $column;
         $this->values = $values;
         $this->isIncluded = $isIncluded;
+        $this->emptyAsNoFilter = $emptyAsNoFilter;
     }
 
     /**
@@ -58,5 +64,13 @@ class ValueArrayCondition implements ColumnableCondition
     public function isIncluded(): bool
     {
         return $this->isIncluded;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEmptyAsNoFilter(): bool
+    {
+        return $this->emptyAsNoFilter;
     }
 }
