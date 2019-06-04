@@ -107,7 +107,7 @@ class QueryBuilderPreparer
             }
 
             else if ($condition instanceof ValueArrayCondition) {
-                if ($condition->getValues() !== []) {
+                if ($condition->getValues() !== [] || $condition->isEmptyAsNoFilter() === false) {
                     $pdoType = $this->getPdoType($condition->getColumn());
                     if ($pdoType === ParameterType::INTEGER) {
                         $type = Connection::PARAM_INT_ARRAY;

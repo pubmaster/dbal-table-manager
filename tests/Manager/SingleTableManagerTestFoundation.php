@@ -334,6 +334,74 @@ abstract class SingleTableManagerTestFoundation extends TestCase
         self::assertEquals(count($targetUsers), $count);
     }
 
+    public function testSuccessGetCountWithFilterInEmptyArray(): void
+    {
+        // arrange
+        $targetUsers = [];
+
+        $filter = new Filter();
+        $filter->in('age', []);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterNotInEmptyArray(): void
+    {
+        // arrange
+        $targetUsers = [];
+
+        $filter = new Filter();
+        $filter->notIn('age', []);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->in('age', [], true);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
+    public function testSuccessGetCountWithFilterNotInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->notIn('age', [], true);
+
+        // action
+        $count = $this->manager->getCount($filter);
+
+        // assert
+        self::assertEquals(count($targetUsers), $count);
+    }
+
     public function testSuccessGetCountWithFilterLikeNoBounds(): void
     {
         // arrange
@@ -728,6 +796,86 @@ abstract class SingleTableManagerTestFoundation extends TestCase
 
         $filter = new Filter();
         $filter->notIn('age', [22, 13]);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterInEmptyArray(): void
+    {
+        // arrange
+        $targetUsers = [];
+
+        $filter = new Filter();
+        $filter->in('age', []);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterNotInEmptyArray(): void
+    {
+        // arrange
+        $targetUsers = [];
+
+        $filter = new Filter();
+        $filter->notIn('age', []);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->in('age', [], true);
+
+        // action
+        $resultUsers = $this->manager->findAll($filter);
+
+        // assert
+        self::assertCount(count($targetUsers), $resultUsers);
+        foreach ($resultUsers as $index => $resultUser) {
+            self::assertEquals($targetUsers[$index]['id'], $resultUser['id']);
+        }
+    }
+
+    public function testSuccessFindAllWithFilterNotInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUsers = [
+            self::USER_1,
+            self::USER_2,
+            self::USER_4,
+        ];
+
+        $filter = new Filter();
+        $filter->notIn('age', [], true);
 
         // action
         $resultUsers = $this->manager->findAll($filter);
@@ -1201,6 +1349,64 @@ abstract class SingleTableManagerTestFoundation extends TestCase
 
         $filter = new Filter();
         $filter->notIn('age', [22, 13]);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
+    public function testSuccessFindOneByFilterInEmptyArray(): void
+    {
+        // arrange
+        $filter = new Filter();
+        $filter->in('age', []);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNull($resultUser);
+    }
+
+    public function testSuccessFindOneByFilterNotInEmptyArray(): void
+    {
+        // arrange
+        $filter = new Filter();
+        $filter->notIn('age', []);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNull($resultUser);
+    }
+
+    public function testSuccessFindOneByFilterInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUser = self::USER_1;
+
+        $filter = new Filter();
+        $filter->in('age', [], true);
+
+        // action
+        $resultUser = $this->manager->findOneByFilter($filter);
+
+        // assert
+        self::assertNotNull($resultUser);
+        self::assertEquals($targetUser['id'], $resultUser['id']);
+    }
+
+    public function testSuccessFindOneByFilterNotInEmptyArrayAsNoFilter(): void
+    {
+        // arrange
+        $targetUser = self::USER_1;
+
+        $filter = new Filter();
+        $filter->notIn('age', [], true);
 
         // action
         $resultUser = $this->manager->findOneByFilter($filter);
