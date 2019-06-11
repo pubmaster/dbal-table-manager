@@ -14,7 +14,7 @@ use DBALTableManager\Query\Condition\ValueLikeCondition;
  *
  * @package DBALTableManager\Query
  */
-class Filter
+class Filter implements FilterInterface
 {
     /**
      * @var array

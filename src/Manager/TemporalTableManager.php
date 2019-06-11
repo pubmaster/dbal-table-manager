@@ -8,8 +8,9 @@ use DBALTableManager\Entity\TemporalVersionEntityInterface;
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Exception\QueryExecutionException;
 use DBALTableManager\Query\Filter;
-use DBALTableManager\Query\Pagination;
-use DBALTableManager\Query\Sorting;
+use DBALTableManager\Query\FilterInterface;
+use DBALTableManager\Query\PaginationInterface;
+use DBALTableManager\Query\SortingInterface;
 use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
 use DBALTableManager\TableRowCaster\TableRowCaster;
 use DBALTableManager\Util\CurrentTimeInterface;
@@ -93,12 +94,12 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter|null $filter
+     * @param FilterInterface|null $filter
      * @param string|null $asOfTime
      *
      * @return int
      */
-    public function getCount(?Filter $filter = null, ?string $asOfTime = null): int
+    public function getCount(?FilterInterface $filter = null, ?string $asOfTime = null): int
     {
         $query = $this->makeQuery($asOfTime);
         $query->select('count(*) as count');
@@ -114,17 +115,17 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter|null $filter
-     * @param Pagination|null $pagination
-     * @param Sorting|null $sorting
+     * @param FilterInterface|null $filter
+     * @param PaginationInterface|null $pagination
+     * @param SortingInterface|null $sorting
      * @param string|null $asOfTime
      *
      * @return array
      */
     public function findAll(
-        ?Filter $filter = null,
-        ?Pagination $pagination = null,
-        ?Sorting $sorting = null,
+        ?FilterInterface $filter = null,
+        ?PaginationInterface $pagination = null,
+        ?SortingInterface $sorting = null,
         ?string $asOfTime = null
     ): array
     {
@@ -177,13 +178,17 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
-     * @param Sorting|null $sorting
+     * @param FilterInterface $filter
+     * @param SortingInterface|null $sorting
      * @param string|null $asOfTime
      *
      * @return array
      */
-    public function findOneByFilter(Filter $filter, ?Sorting $sorting = null, ?string $asOfTime = null): ?array
+    public function findOneByFilter(
+        FilterInterface $filter,
+        ?SortingInterface $sorting = null,
+        ?string $asOfTime = null
+    ): ?array
     {
         $query = $this->makeQuery($asOfTime);
         $this->applySelectAllColumns($query);
@@ -321,12 +326,12 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      * @param array $data
      *
      * @return int
      */
-    public function updateByFilter(Filter $filter, array $data): int
+    public function updateByFilter(FilterInterface $filter, array $data): int
     {
         $result = 0;
 
@@ -490,7 +495,7 @@ class TemporalTableManager implements DataManipulationInterface
 
     /**
      * @param array $data
-     * @param Filter[] $filterList
+     * @param FilterInterface[] $filterList
      *
      * @return int
      */
@@ -510,11 +515,11 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function deleteByFilter(Filter $filter): int
+    public function deleteByFilter(FilterInterface $filter): int
     {
         $result = 0;
 
@@ -548,9 +553,9 @@ class TemporalTableManager implements DataManipulationInterface
     /**
      * @param $staticPk
      *
-     * @return Filter
+     * @return FilterInterface
      */
-    private function makeVersionFilterFromStaticPk($staticPk): Filter
+    private function makeVersionFilterFromStaticPk($staticPk): FilterInterface
     {
         $filter = new Filter();
 
@@ -581,11 +586,11 @@ class TemporalTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function softDeleteByFilter(Filter $filter): int
+    public function softDeleteByFilter(FilterInterface $filter): int
     {
         return $this->staticManager->softDeleteByFilter($filter);
     }

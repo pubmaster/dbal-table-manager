@@ -13,8 +13,8 @@ use DBALTableManager\Query\Condition\RawSqlCondition;
 use DBALTableManager\Query\Condition\ValueArrayCondition;
 use DBALTableManager\Query\Condition\ValueComparisonCondition;
 use DBALTableManager\Query\Condition\ValueLikeCondition;
-use DBALTableManager\Query\Filter;
-use DBALTableManager\Query\Sorting;
+use DBALTableManager\Query\FilterInterface;
+use DBALTableManager\Query\SortingInterface;
 use DBALTableManager\SchemaDescription\SchemaDescriptionInterface;
 use DBALTableManager\Util\StringUtils;
 use Doctrine\DBAL\Connection;
@@ -68,9 +68,9 @@ class QueryBuilderPreparer
 
     /**
      * @param QueryBuilder $query
-     * @param Filter|null $filter
+     * @param FilterInterface|null $filter
      */
-    public function applyFilters(QueryBuilder $query, ?Filter $filter): void
+    public function applyFilters(QueryBuilder $query, ?FilterInterface $filter): void
     {
         $conditionList = [];
         if ($filter !== null) {
@@ -163,9 +163,9 @@ class QueryBuilderPreparer
 
     /**
      * @param QueryBuilder $query
-     * @param Sorting|null $sorting
+     * @param SortingInterface|null $sorting
      */
-    public function applyOrderBy(QueryBuilder $query, ?Sorting $sorting): void
+    public function applyOrderBy(QueryBuilder $query, ?SortingInterface $sorting): void
     {
         $sortList = [];
         if ($sorting !== null) {
