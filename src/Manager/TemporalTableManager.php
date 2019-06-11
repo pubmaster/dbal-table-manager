@@ -30,35 +30,35 @@ class TemporalTableManager implements DataManipulationInterface
     /**
      * @var BaseConnectionInterface
      */
-    private $connection;
+    protected $connection;
     /**
      * @var SingleTableManager
      */
-    private $staticManager;
+    protected $staticManager;
     /**
      * @var SingleTableManager
      */
-    private $versionManager;
+    protected $versionManager;
     /**
      * @var QueryBuilderPreparer
      */
-    private $queryBuilderPreparer;
+    protected $queryBuilderPreparer;
     /**
      * @var TableRowCaster
      */
-    private $tableRowCaster;
+    protected $tableRowCaster;
     /**
      * @var CurrentTimeInterface
      */
-    private $currentTime;
+    protected $currentTime;
     /**
      * @var EntityInterface
      */
-    private $staticEntity;
+    protected $staticEntity;
     /**
      * @var TemporalVersionEntityInterface
      */
-    private $versionEntity;
+    protected $versionEntity;
 
     /**
      * TemporalTableManager constructor.
