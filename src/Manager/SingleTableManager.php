@@ -414,6 +414,29 @@ class SingleTableManager implements DataManipulationInterface
         return $query->execute();
     }
 
+    /**
+     * @param $pk
+     *
+     * @return int
+     */
+    public function restoreByPk($pk): int
+    {
+        if ($this->entity->isSoftDeletable() === false) {
+            throw EntityDefinitionException::withNotSoftDeletable();
+        }
+
+        $query = $this->connection->createQueryBuilder();
+        $query->update($this->entity->getTableName());
+
+        $this->queryBuilderPreparer->applyPkFilterToQuery($query, $pk, true);
+
+        $query->andWhere($this->entity->getDeletedAtField() . ' IS NOT NULL');
+
+        $this->unsetSoftDeletedValues($query);
+
+        return $query->execute();
+    }
+
     public function truncate(): void
     {
         $dbPlatform = $this->connection->getDatabasePlatform();
@@ -442,6 +465,28 @@ class SingleTableManager implements DataManipulationInterface
         $query->set(
             $this->queryBuilderPreparer->prepareColumnName($this->entity->getDeletedAtField()),
             $query->createNamedParameter($currentTime)
+        );
+
+        if ($this->entity->isTimestampable()) {
+            $this->entityValidator->checkTimestampableEntity();
+            $query->set(
+                $this->queryBuilderPreparer->prepareColumnName($this->entity->getUpdatedAtField()),
+                $query->createNamedParameter($currentTime)
+            );
+        }
+    }
+
+    /**
+     * @param QueryBuilder $query
+     */
+    private function unsetSoftDeletedValues(QueryBuilder $query): void
+    {
+        $currentTime = $this->currentTime->getCurrentTime()->format('Y-m-d H:i:s');
+
+        $this->entityValidator->checkSoftDeletableEntity();
+        $query->set(
+            $this->queryBuilderPreparer->prepareColumnName($this->entity->getDeletedAtField()),
+            $query->createNamedParameter(null)
         );
 
         if ($this->entity->isTimestampable()) {
