@@ -28,27 +28,27 @@ class SingleTableManager implements DataManipulationInterface
     /**
      * @var BaseConnectionInterface
      */
-    private $connection;
+    protected $connection;
     /**
      * @var QueryBuilderPreparer
      */
-    private $queryBuilderPreparer;
+    protected $queryBuilderPreparer;
     /**
      * @var TableRowCaster
      */
-    private $tableRowCaster;
+    protected $tableRowCaster;
     /**
      * @var CurrentTimeInterface
      */
-    private $currentTime;
+    protected $currentTime;
     /**
      * @var EntityValidator
      */
-    private $entityValidator;
+    protected $entityValidator;
     /**
      * @var EntityInterface
      */
-    private $entity;
+    protected $entity;
 
     /**
      * SingleTableManager constructor.
