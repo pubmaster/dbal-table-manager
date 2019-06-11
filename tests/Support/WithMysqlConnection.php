@@ -25,8 +25,6 @@ trait WithMysqlConnection
             'wrapperClass' => DBALDefaultConnection::class,
         ]);
 
-        $connection->getConfiguration()->setSQLLogger(new EchoSQLLogger());
-
         return $connection;
     }
 
