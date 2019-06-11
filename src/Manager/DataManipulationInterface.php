@@ -3,6 +3,7 @@
 namespace DBALTableManager\Manager;
 
 use DBALTableManager\Query\Filter;
+use DBALTableManager\Query\FilterInterface;
 
 /**
  * Interface DataManipulationInterface
@@ -26,12 +27,12 @@ interface DataManipulationInterface
     public function batchInsert(array $data): int;
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      * @param array $data
      *
      * @return int
      */
-    public function updateByFilter(Filter $filter, array $data): int;
+    public function updateByFilter(FilterInterface $filter, array $data): int;
 
     /**
      * @param $pk
@@ -50,11 +51,11 @@ interface DataManipulationInterface
     public function batchUpdate(array $data, array $filterList): int;
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function deleteByFilter(Filter $filter): int;
+    public function deleteByFilter(FilterInterface $filter): int;
 
     /**
      * @param $pk
@@ -69,11 +70,11 @@ interface DataManipulationInterface
     public function deleteAll(): int;
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function softDeleteByFilter(Filter $filter): int;
+    public function softDeleteByFilter(FilterInterface $filter): int;
 
     /**
      * @param $pk

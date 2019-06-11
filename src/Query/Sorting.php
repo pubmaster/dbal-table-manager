@@ -7,7 +7,7 @@ namespace DBALTableManager\Query;
  *
  * @package DBALTableManager\Query
  */
-class Sorting
+class Sorting implements SortingInterface
 {
     public const SORT_ASC = 'ASC';
     public const SORT_DESC = 'DESC';

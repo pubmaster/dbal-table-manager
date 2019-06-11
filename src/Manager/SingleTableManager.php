@@ -8,9 +8,9 @@ use DBALTableManager\EntityValidator\EntityValidator;
 use DBALTableManager\Exception\EntityDefinitionException;
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Exception\QueryExecutionException;
-use DBALTableManager\Query\Filter;
-use DBALTableManager\Query\Pagination;
-use DBALTableManager\Query\Sorting;
+use DBALTableManager\Query\FilterInterface;
+use DBALTableManager\Query\PaginationInterface;
+use DBALTableManager\Query\SortingInterface;
 use DBALTableManager\QueryBuilder\QueryBuilderPreparer;
 use DBALTableManager\TableRowCaster\TableRowCaster;
 use DBALTableManager\Util\BulkInsertQuery;
@@ -78,11 +78,11 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter|null $filter
+     * @param FilterInterface|null $filter
      *
      * @return int
      */
-    public function getCount(?Filter $filter = null): int
+    public function getCount(?FilterInterface $filter = null): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('count(*) as count');
@@ -99,16 +99,16 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter|null $filter
-     * @param Pagination|null $pagination
-     * @param Sorting|null $sorting
+     * @param FilterInterface|null $filter
+     * @param PaginationInterface|null $pagination
+     * @param SortingInterface|null $sorting
      *
      * @return array
      */
     public function findAll(
-        ?Filter $filter = null,
-        ?Pagination $pagination = null,
-        ?Sorting $sorting = null
+        ?FilterInterface $filter = null,
+        ?PaginationInterface $pagination = null,
+        ?SortingInterface $sorting = null
     ): array
     {
         $query = $this->connection->createQueryBuilder();
@@ -139,12 +139,12 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
-     * @param Sorting|null $sorting
+     * @param FilterInterface $filter
+     * @param SortingInterface|null $sorting
      *
      * @return array
      */
-    public function findOneByFilter(Filter $filter, ?Sorting $sorting = null): ?array
+    public function findOneByFilter(FilterInterface $filter, ?SortingInterface $sorting = null): ?array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select('*');
@@ -260,12 +260,12 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      * @param array $data
      *
      * @return int
      */
-    public function updateByFilter(Filter $filter, array $data): int
+    public function updateByFilter(FilterInterface $filter, array $data): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->update($this->entity->getTableName());
@@ -295,7 +295,7 @@ class SingleTableManager implements DataManipulationInterface
 
     /**
      * @param array $data
-     * @param Filter[] $filterList
+     * @param FilterInterface[] $filterList
      *
      * @return int
      */
@@ -315,11 +315,11 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function deleteByFilter(Filter $filter): int
+    public function deleteByFilter(FilterInterface $filter): int
     {
         $query = $this->connection->createQueryBuilder();
         $query->delete($this->entity->getTableName());
@@ -356,11 +356,11 @@ class SingleTableManager implements DataManipulationInterface
     }
 
     /**
-     * @param Filter $filter
+     * @param FilterInterface $filter
      *
      * @return int
      */
-    public function softDeleteByFilter(Filter $filter): int
+    public function softDeleteByFilter(FilterInterface $filter): int
     {
         if ($this->entity->isSoftDeletable() === false) {
             throw EntityDefinitionException::withNotSoftDeletable();

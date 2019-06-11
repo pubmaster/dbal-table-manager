@@ -7,7 +7,7 @@ namespace DBALTableManager\Query;
  *
  * @package DBALTableManager\Query
  */
-class Pagination
+class Pagination implements PaginationInterface
 {
     /** @var int|null */
     private $limit;

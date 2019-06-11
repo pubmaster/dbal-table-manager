@@ -24,6 +24,11 @@ interface BaseConnectionInterface extends Connection
     public function ping();
 
     /**
+     * @return bool
+     */
+    public function close();
+
+    /**
      * @param $tableExpression
      * @param array $data
      * @param array $types
