@@ -1913,6 +1913,46 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         }
     }
 
+    public function testSuccessRestoreByPk(): void
+    {
+        // arrange
+        $targetUser = self::USER_3;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->restoreByPk($id);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $deletedRow = $this->staticDataRetriever->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+        self::assertNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+        self::assertNotEquals($targetUser[DefaultTestEntity::UPDATED_AT_COLUMN], $deletedRow[DefaultTestEntity::UPDATED_AT_COLUMN]);
+    }
+
+    public function testSuccessRestoreByPkAlreadyNotSoftDeletedRow(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+        $id = $targetUser['id'];
+
+        // action
+        $count = $this->manager->restoreByPk($id);
+
+        // assert
+        self::assertEquals(0, $count);
+
+        $deletedRow = $this->staticDataRetriever->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertNotNull($deletedRow);
+        self::assertNull($deletedRow[DefaultTestEntity::DELETED_AT_COLUMN]);
+        self::assertEquals($targetUser[DefaultTestEntity::UPDATED_AT_COLUMN], $deletedRow[DefaultTestEntity::UPDATED_AT_COLUMN]);
+    }
+
     public function testSuccessTruncate(): void
     {
         // action

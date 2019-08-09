@@ -5,6 +5,7 @@ namespace DBALTableManager\Manager;
 use DBALTableManager\BaseConnectionInterface;
 use DBALTableManager\Entity\EntityInterface;
 use DBALTableManager\Entity\TemporalVersionEntityInterface;
+use DBALTableManager\Exception\EntityDefinitionException;
 use DBALTableManager\Exception\InvalidRequestException;
 use DBALTableManager\Exception\QueryExecutionException;
 use DBALTableManager\Query\Filter;
@@ -611,6 +612,16 @@ class TemporalTableManager implements DataManipulationInterface
     public function softDeleteAll(): int
     {
         return $this->staticManager->softDeleteAll();
+    }
+
+    /**
+     * @param $pk
+     *
+     * @return int
+     */
+    public function restoreByPk($pk): int
+    {
+        return $this->staticManager->restoreByPk($pk);
     }
 
     public function truncate(): void
