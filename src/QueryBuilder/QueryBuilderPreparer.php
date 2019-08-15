@@ -6,7 +6,6 @@ use DBALTableManager\Entity\EntityInterface;
 use DBALTableManager\EntityValidator\EntityValidator;
 use DBALTableManager\Exception\EntityDefinitionException;
 use DBALTableManager\Exception\InvalidRequestException;
-use DBALTableManager\Query\Condition\ColumnableCondition;
 use DBALTableManager\Query\Condition\DeletedRowCondition;
 use DBALTableManager\Query\Condition\NullableValueCondition;
 use DBALTableManager\Query\Condition\RawSqlCondition;
@@ -76,14 +75,6 @@ class QueryBuilderPreparer
         if ($filter !== null) {
             $conditionList = $filter->getConditionList();
         }
-
-        $columnList = [];
-        foreach ($conditionList as $condition) {
-            if ($condition instanceof ColumnableCondition) {
-                $columnList[] = $condition->getColumn();
-            }
-        }
-        $this->checkColumnList($columnList);
 
         $hasDeletedAtFilter = false;
 
@@ -171,12 +162,6 @@ class QueryBuilderPreparer
         if ($sorting !== null) {
             $sortList = $sorting->getSortList();
         }
-
-        $columnList = [];
-        foreach ($sortList as $sort) {
-            $columnList[] = $sort->getColumn();
-        }
-        $this->checkColumnList($columnList);
 
         foreach ($sortList as $sort) {
             $query->addOrderBy($this->prepareColumnName($sort->getColumn()), $sort->getOrder());
