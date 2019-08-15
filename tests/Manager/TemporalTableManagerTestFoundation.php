@@ -671,6 +671,20 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         );
     }
 
+    public function testFailFindAllUnknownColumnList(): void
+    {
+        // arrange
+        $filter = new Filter();
+        $filter->equals('UNKNOWN_FIELD', 1);
+
+        // assert
+        // action
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessage('Unknown columns: [UNKNOWN_FIELD]');
+
+        $this->manager->findAll($filter);
+    }
+
     public function testSuccessFindOneByFilterNotFound(): void
     {
         // arrange

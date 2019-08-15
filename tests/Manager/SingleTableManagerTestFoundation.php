@@ -1139,6 +1139,20 @@ abstract class SingleTableManagerTestFoundation extends TestCase
         }
     }
 
+    public function testFailFindAllUnknownColumnList(): void
+    {
+        // arrange
+        $filter = new Filter();
+        $filter->equals('UNKNOWN_FIELD', 1);
+
+        // assert
+        // action
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessage('Unknown columns: [UNKNOWN_FIELD]');
+
+        $this->manager->findAll($filter);
+    }
+
     public function testSuccessFindOneByFilterWithEmptyFilter(): void
     {
         // arrange
@@ -1711,21 +1725,6 @@ abstract class SingleTableManagerTestFoundation extends TestCase
         self::assertEquals($dataForInsert['created_at'], $insertedData['created_at']);
         self::assertEquals($dataForInsert['updated_at'], $insertedData['updated_at']);
         self::assertEquals($dataForInsert['deleted_at'], $insertedData['deleted_at']);
-    }
-
-    public function testFailInsertUnknownColumnList(): void
-    {
-        // arrange
-        $dataForInsert = [
-            'UNKNOWN_FIELD' => 'Inserted User',
-        ];
-
-        // assert
-        // action
-        $this->expectException(InvalidRequestException::class);
-        $this->expectExceptionMessage('Unknown columns: [UNKNOWN_FIELD]');
-
-        $this->manager->insert($dataForInsert);
     }
 
     public function testSuccessBatchInsert(): void
