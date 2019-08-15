@@ -65,11 +65,14 @@ class TableManagerFactory
      * @param BaseConnectionInterface $connection
      * @param EntityInterface $entity
      *
+     * @param string|null $managerClass
+     *
      * @return SingleTableManager
      */
     public function makeManagerForSingleTable(
         BaseConnectionInterface $connection,
-        EntityInterface $entity
+        EntityInterface $entity,
+        string $managerClass = null
     ): SingleTableManager
     {
         $schemaDescription = new SingleTableSchemaDescription($entity);
@@ -77,7 +80,9 @@ class TableManagerFactory
         $queryBuilderPreparer = new QueryBuilderPreparer($entity, $schemaDescription, $entityValidator, $this->stringUtils);
         $tableRowCaster = new TableRowCaster($this->typeConverter, $schemaDescription);
 
-        return new SingleTableManager(
+        $class = $managerClass ?: SingleTableManager::class;
+
+        return new $class(
             $connection,
             $queryBuilderPreparer,
             $tableRowCaster,
@@ -90,7 +95,8 @@ class TableManagerFactory
     public function makeManagerForTemporalTable(
         BaseConnectionInterface $connection,
         EntityInterface $staticEntity,
-        TemporalVersionEntityInterface $versionEntity
+        TemporalVersionEntityInterface $versionEntity,
+        string $managerClass = null
     ): TemporalTableManager
     {
         $schemaDescription = new TemporalTableSchemaDescription($staticEntity, $versionEntity);
@@ -104,7 +110,9 @@ class TableManagerFactory
             $this->entityTransformer->transformVersionToCommon($versionEntity)
         );
 
-        return new TemporalTableManager(
+        $class = $managerClass ?: TemporalTableManager::class;
+
+        return new $class(
             $connection,
             $staticManager,
             $versionManager,
