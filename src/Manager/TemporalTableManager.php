@@ -395,6 +395,7 @@ class TemporalTableManager implements DataManipulationInterface
             $this->staticManager->updateByPk($pk, $staticData);
         }
         if ($versionHasChanges) {
+            $versionData = $this->addMissingVersionDataForUpdate($versionData, $existingRow);
             $this->versionManager->insert($versionData);
         }
 
@@ -468,6 +469,25 @@ class TemporalTableManager implements DataManipulationInterface
         }
 
         return $versionData;
+    }
+
+    /**
+     * @param array $dataForUpdate
+     * @param array $previousData
+     *
+     * @return array
+     */
+    private function addMissingVersionDataForUpdate(array $dataForUpdate, array $previousData): array
+    {
+        $versionFields = array_diff(
+            array_keys($this->versionEntity->getFieldMap()), $this->versionEntity->getPrimaryKey()
+        );
+        $missingFields = array_diff($versionFields, array_keys($dataForUpdate));
+        foreach ($missingFields as $key) {
+            $dataForUpdate[$key] = $previousData[$key] ?? null;
+        }
+
+        return $dataForUpdate;
     }
 
     /**

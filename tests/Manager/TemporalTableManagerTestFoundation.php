@@ -1283,6 +1283,50 @@ abstract class TemporalTableManagerTestFoundation extends TestCase
         self::assertEquals($dataForUpdate['fired'], $updatedData['fired']);
     }
 
+    public function testSuccessUpdateByPkPartialUpdateInVersionTable(): void
+    {
+        // arrange
+        $targetUser = self::USER_4;
+        $targetUserVersion = self::USER_4_VERSION_2;
+        $id = $targetUser['id'];
+
+        $dataForUpdate = [
+            'salary' => 20000,
+        ];
+
+        // action
+        $count = $this->manager->updateByPk($id, $dataForUpdate);
+
+        // assert
+        self::assertEquals(1, $count);
+
+        $updatedData = $this->staticDataRetriever->getOneRowFromDB([
+            'id' => $id,
+        ]);
+        self::assertEquals($targetUser['name'], $updatedData['name']);
+        self::assertEquals($targetUser['birthday'], $updatedData['birthday']);
+        self::assertEquals($targetUser['age'], $updatedData['age']);
+        self::assertEquals($targetUser['weight'], $updatedData['weight']);
+        self::assertEquals($targetUser['married'], $updatedData['married']);
+        self::assertEquals($targetUser['created_at'], $updatedData['created_at']);
+        self::assertNotEquals($targetUser['updated_at'], $updatedData['updated_at']);
+        self::assertNotNull($updatedData[DefaultTestEntity::UPDATED_AT_COLUMN]);
+
+        $versionCount = $this->versionDataRetriever->getCountFromDB([
+            'user_id' => $targetUser['id'],
+        ]);
+        self::assertEquals(3, $versionCount);
+
+        $updatedData = $this->versionDataRetriever->getOneRowFromDB([
+            'user_id' => $targetUser['id'],
+        ], [
+            'created_at' => 'desc',
+        ]);
+        self::assertEquals($dataForUpdate['salary'], $updatedData['salary']);
+        self::assertEquals($targetUserVersion['fired'], $updatedData['fired']);
+    }
+
+
     public function testSuccessUpdateByPkWithExplicitTimestamps(): void
     {
         // arrange
